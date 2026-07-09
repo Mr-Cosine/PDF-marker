@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <!-- https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP -->
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self'; script-src 'self';">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>PDF Marker</title>
+</head>
+<body>
+    <div class="app-container">
+        <h1>
+            📄 PDF 标记工具
+            <small>v0.1</small>
+        </h1>
+
+        <!-- ===== 设置区 ===== -->
+        <div class="settings">
+            <div class="setting-group">
+                <label for="keywordInput">Keyword:</label>
+                <input type="text" id="keywordInput" value="NEW VAM" />
+            </div>
+            <div class="setting-group">
+                <label for="vagueToggle">Vague Search:</label>
+                <input type="checkbox" id="vagueToggle" checked />
+            </div>
+            <div class="setting-group">
+                <label for="outputDirInput">Output Directory:</label>
+                <input type="text" id="outputDirInput" placeholder="Select output directory" readonly />
+                <button type="button" id="selectOutputDirBtn">📁</button>
+            </div>
+            <div class="setting-group">
+                <label for="outputNameInput">Output File Name:</label>
+                <input type="text" id="outputNameInput" placeholder="Enter output file name" value="MarkedPDF"/>
+            </div>
+        </div>
+
+        <div class="file-select">
+            <label for="fileInput">Select Files</label>
+            <button type="button" id="fileInput">📁</button>
+        </div>
+
+        <!-- ===== 文件列表 ===== -->
+        <div class="file-list-wrapper">
+            <div class="file-list-header">
+                <span>File List</span>
+                <span id="orderHint">Drag up/down to sort</span>
+            </div>
+            <ul class="file-list" id="fileList">
+                <li class="empty-message">No files selected</li>
+            </ul>
+        </div>
+
+        <!-- ===== 操作按钮 ===== -->
+        <div class="action-row">
+            <button class="btn-mark" id="markBtn">🚀 Mark Document</button>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

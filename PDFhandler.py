@@ -1,3 +1,0 @@
-"""
-OCR and annotation marking
-"""
