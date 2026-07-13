@@ -37,7 +37,7 @@ def getConfigs():
         output_name = settings.get('outputName', None)
         files = settings.get('files', None)
 
-        if not all([vague, capital, output_dir, output_name, files]): _throw("Invalid input parameters.")
+        if not all([vague is not None, capital is not None, output_dir, output_name, files]): _throw("Invalid input parameters.")
 
         return [{'keyword': keyword, 'vague': vague, 'capital': capital, 'output_dir': output_dir, 'output_name': output_name}, files]
 
@@ -137,10 +137,10 @@ def markPDF(settings, file):
 
             #mark if contains keyword
             if has_keyword(text):
-                left = min(word['left'] for word in words)
-                top = min(word['top'] for word in words)
-                right = max(word['right'] for word in words)
-                bottom = max(word['bottom'] for word in words)
+                left = min(word['left'] for word in words) - STR_WIDTH * 2
+                top = min(word['top'] for word in words) - STR_WIDTH * 2
+                right = max(word['right'] for word in words) + STR_WIDTH * 2
+                bottom = max(word['bottom'] for word in words) + STR_WIDTH * 2
 
                 annot = page.add_rect_annot(pymupdf.Rect(left, top, right, bottom))
                 annot.set_border(width=STR_WIDTH)

@@ -187,6 +187,7 @@ h1 small {
     padding: 10px 16px;
     border-bottom: 1px solid #f1f5f9;
     transition: background 0.1s;
+    overflow-y: hidden;
 }
 
 .file-list li:last-child {

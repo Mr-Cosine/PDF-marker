@@ -13,7 +13,7 @@
     function renderFileList() {
         fileListEl.innerHTML = '';
 
-        fileItems = fileItems.filter(item => item.refcode !== refcode);
+        fileItems = fileItems.filter(item => !(item.refcode === undefined && item.refcode === null));
         if (fileItems.length === 0) {
             const empty = document.createElement('li');
             empty.className = 'empty-message';
@@ -73,7 +73,7 @@
             delBtn.refcode = item.refcode;
             delBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                fileItems = fileItems.filter(item => item.refcode !== delBtn.refcode);
+                fileItems = fileItems.filter(item => !(item.refcode === delBtn.refcode));
                 renderFileList();
             })
             actionBtns.appendChild(delBtn);
