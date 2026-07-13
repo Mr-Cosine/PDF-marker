@@ -1,8 +1,6 @@
 (function() {
-    // ----- 状态 -----
-    let fileItems = []; // 存储 { name, file } 对象
+    let fileItems = [];
 
-    // DOM 引用
     const selectOutputDir = document.getElementById('selectOutputDirBtn');
     const outputDirInput = document.getElementById('outputDirInput');
     const fileInput = document.getElementById('fileInput');
@@ -12,37 +10,33 @@
     const vagueToggle = document.getElementById('vagueToggle');
     const markBtn = document.getElementById('markBtn');
 
-    // ----- 渲染列表 -----
     function renderFileList() {
-        // 清空
         fileListEl.innerHTML = '';
 
+        fileItems = fileItems.filter(item => item.refcode !== refcode);
         if (fileItems.length === 0) {
             const empty = document.createElement('li');
             empty.className = 'empty-message';
             empty.textContent = 'No files';
             fileListEl.appendChild(empty);
-            markBtn.disabled = true;
+            updateMarkButton();
             return;
         }
 
-        markBtn.disabled = false;
+        updateMarkButton();
 
         fileItems.forEach((item, index) => {
             const li = document.createElement('li');
             li.setAttribute("class", "file-list")
 
-            // 文件名 + 大小信息
             const nameSpan = document.createElement('span');
             nameSpan.setAttribute("class", 'file-name');
             nameSpan.textContent = `${item.name}`;
             li.appendChild(nameSpan);
 
-            // 操作按钮组
-            const actions = document.createElement('div');
-            actions.className = 'file-actions';
+            const actionBtns = document.createElement('div');
+            actionBtns.className = 'file-actions';
 
-            // 上移
             const upBtn = document.createElement('button');
             upBtn.setAttribute('class', 'action-button')
             upBtn.textContent = '▲';
@@ -55,7 +49,7 @@
                     renderFileList();
                 }
             });
-            actions.appendChild(upBtn);
+            actionBtns.appendChild(upBtn);
 
             // 下移
             const downBtn = document.createElement('button');
@@ -70,21 +64,21 @@
                     renderFileList();
                 }
             });
-            actions.appendChild(downBtn);
+            actionBtns.appendChild(downBtn);
 
             const delBtn = document.createElement('button');
             delBtn.setAttribute('class', 'del-button')
             delBtn.textContent = '✖';
             delBtn.title = 'delete';   
-            delBtn.refcode = item.path;
+            delBtn.refcode = item.refcode;
             delBtn.addEventListener('click', (e) => {
                 e.stopPropagation();
-                fileItems = fileItems.filter(item => item.path !== delBtn.refcode);
+                fileItems = fileItems.filter(item => item.refcode !== delBtn.refcode);
                 renderFileList();
             })
-            actions.appendChild(delBtn);
+            actionBtns.appendChild(delBtn);
 
-            li.appendChild(actions);
+            li.appendChild(actionBtns);
             fileListEl.appendChild(li);
         });
     }
@@ -99,32 +93,43 @@
         const paths = await window.electronAPI.openPDFDialog();
         if (paths.length === 0) return;
 
-        // 将路径添加到文件列表
         paths.forEach((filePath, index) => {
-            // 从路径中提取文件名
             const name = filePath.split(/[\\/]/).pop();
             fileItems.push({
                 name: name,
                 path: filePath,
+                refcode: crypto.randomUUID()
             });
         });
         renderFileList();
     });
 
-    // ----- Mark button -----
-    document.getElementById('markBtn').addEventListener('click', async () => {
-        const keyword = document.getElementById('keywordInput').value.trim() || 'NEW VAM';
-        const vague = document.getElementById('vagueToggle').checked;
-        const outputDir = document.getElementById('outputDirInput').value.trim() || '';
-        const outputName = document.getElementById('outputNameInput').value.trim() || 'MarkedPDF';
+    function updateMarkButton() {
+        const keyword = document.getElementById('keywordInput').value.trim();
+        const outputDir = document.getElementById('outputDirInput').value.trim();
+        const outputName = document.getElementById('outputNameInput').value.trim();
+        const hasFiles = fileItems.length > 0;
+        markBtn.disabled = !(keyword && outputDir && outputName && hasFiles);
+    }
 
+    document.getElementById('keywordInput').addEventListener('input', updateMarkButton);
+    document.getElementById('outputDirInput').addEventListener('input', updateMarkButton);
+    document.getElementById('outputNameInput').addEventListener('input', updateMarkButton);
+
+    // ----- Mark button -----
+    markBtn.addEventListener('click', async () => {
+        const keyword = document.getElementById('keywordInput').value.trim();
+        const vague = document.getElementById('vagueToggle').checked;
+        const capital = document.getElementById('capitalToggle').checked;
+        const outputDir = document.getElementById('outputDirInput').value.trim();
+        const outputName = document.getElementById('outputNameInput').value.trim();
 
         const files = fileItems.map((item, index) => ({
             index: index,
             path: item.path
         }));
 
-        const settings = { keyword, vague, files, outputDir, outputName };
+        const settings = { keyword, vague, capital, files, outputDir, outputName };
         const result = await window.electronAPI.markPDF(settings);
         alert(result.message);
     });

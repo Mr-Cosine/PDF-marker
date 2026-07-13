@@ -11,6 +11,7 @@ import sys
 import json
 import traceback
 from PIL import Image
+pytesseract.pytesseract.tesseract_cmd = 'TesseractOCR/tesseract.exe'
 
 def _print(message): print(message, file=sys.stderr)
 
@@ -29,20 +30,21 @@ def getConfigs():
         
         settings = json.loads(raw)
 
-        keyword = settings.get('keyword', 'NEW VAM')
-        vague = settings.get('vague', True)
-        files = settings.get('files', [])
-        output_dir = settings.get('outputDir', '')
-        output_name = settings.get('outputName', 'MarkedPDF')
+        keyword = settings.get('keyword', None)
+        vague = settings.get('vague', None)
+        capital = settings.get('capital', None)
+        output_dir = settings.get('outputDir', None)
+        output_name = settings.get('outputName', None)
+        files = settings.get('files', None)
 
-        
-        return {'keyword': keyword, 'vague': vague, 'files': files, 'output_dir': output_dir, 'output_name': output_name}
+        if not all([vague, capital, output_dir, output_name, files]): _throw("Invalid input parameters.")
+
+        return [{'keyword': keyword, 'vague': vague, 'capital': capital, 'output_dir': output_dir, 'output_name': output_name}, files]
 
     except Exception as e:
         _throw(traceback.format_exc())
 
-def mergePDF(settings):
-    files = settings.get('files')
+def mergePDF(files):
     if len(files) == 0: _throw("empty files list")
 
     try: files.sort(key=lambda x: x['index'])
@@ -67,35 +69,32 @@ def mergePDF(settings):
             _print(f"Opening file failed - {pdf_path}: {e}")
             continue
 
-    output_path = os.path.join(settings.get('output_dir', ''), f"{settings.get('output_name', 'MarkedPDF')}.pdf")
-    merged_pdf.save(output_path)
-
     return merged_pdf
 
 def markPDF(settings, file):
-    vague = settings.get('vague')
-
+    #read configs
+    output_dir = settings.get('output_dir', '')
+    output_name = settings.get('output_name', '')
+    OUTPUT_PATH = os.path.join(output_dir, f"{output_name}.pdf")
+    
     keyword_str = settings.get('keyword', '').strip()
     if not keyword_str:
+        file.save(OUTPUT_PATH)
         return
-    elif vague:
-        keywords = [keyword_str]
-    else:
-        keywords = [kw.strip() for kw in keyword_str.split() if kw.strip()]
 
-    output_dir = settings.get('output_dir')
-    output_name = settings.get('output_name')
+    vague = settings.get('vague')
+    match_capital = settings.get('capital')
+    keywords = [kw.strip() if match_capital else kw.strip().lower() for kw in keyword_str.split()]
 
-    if vague:
-        def match(text):
-            return keyword_str.lower() in text.lower()
-    else:
-        keywords = [kw.strip().lower() for kw in keyword_str.split() if kw.strip()]
-        def match(text):
-            text_lower = text.lower()
-            return all(kw in text_lower for kw in keywords)
+    #criteria for marking
+    def has_keyword(text):
+        text_comparing = text if match_capital else text.lower()
+        if vague: return any(kw in text_comparing for kw in keywords)
+        else: return all(kw in text_comparing for kw in keywords)
     
+    #go through pages
     for page_num in range(len(file)):
+        #read and get words on page
         page = file[page_num]
         words = []
 
@@ -111,6 +110,7 @@ def markPDF(settings, file):
                 continue
             words.append({
                 'text': text,
+                'block_num': ocr_data['block_num'][i],
                 'left': ocr_data['left'][i] * scale_x,
                 'top': ocr_data['top'][i] * scale_y,
                 'width': ocr_data['width'][i] * scale_x,
@@ -119,62 +119,44 @@ def markPDF(settings, file):
                 'bottom': (ocr_data['top'][i] + ocr_data['height'][i]) * scale_y
             })
 
-        if not words:
-            continue
-    words.sort(key=lambda w: (w['top'], w['left']))
-    lines = []
-    if words:
-        current_line = [words[0]]
-        for w in words[1:]:
-            avg_top = sum(ww['top'] for ww in current_line) / len(current_line)
-            avg_height = sum(ww['height'] for ww in current_line) / len(current_line)
-            if abs(w['top'] - avg_top) < avg_height / 2:
-                current_line.append(w)
-            else:
-                current_line.sort(key=lambda ww: ww['left'])
-                lines.append(current_line)
-                current_line = [w]
-        if current_line:
-            current_line.sort(key=lambda ww: ww['left'])
-            lines.append(current_line)
+        if not words: continue
 
-    # ---- 将行合并为段落 ----
-    paragraphs = []
-    if lines:
-        current_para = lines[0]
-        for line in lines[1:]:
-            # 计算间距
-            last_line_bottom = max(w['bottom'] for w in current_para)
-            next_line_top = min(w['top'] for w in line)
-            gap = next_line_top - last_line_bottom
-            avg_height = sum(w['height'] for w in current_para) / len(current_para)
-            if gap < avg_height * 1.5:
-                current_para.extend(line)
-            else:
-                paragraphs.append(current_para)
-                current_para = line
-        paragraphs.append(current_para)
+        #group into text blocks
+        text_blocks = {}
+        for word in words:
+            if word['block_num'] not in text_blocks: text_blocks[word['block_num']] = []
+            text_blocks[word['block_num']].append(word)
+        
+        RED = (1, 0, 0)
+        STR_WIDTH = 2
+        #get combinations of text in block
+        for block_num in text_blocks:
+            words = text_blocks[block_num]
+            words.sort(key=lambda w: (w['top'], w['left']))
+            text = ' '.join(word['text'] for word in words)
 
-    # ---- 匹配段落 ----
-    for para_words in paragraphs:
-        para_text = ' '.join(w['text'] for w in para_words)
-        if match(para_text):
-            left = min(w['left'] for w in para_words)
-            top = min(w['top'] for w in para_words)
-            right = max(w['right'] for w in para_words)
-            bottom = max(w['bottom'] for w in para_words)
-            rect = pymupdf.Rect(left, top, right, bottom)
-            annot = page.add_rect_annot(rect)
-            annot.set_border(width=2)
-            annot.update()
-            _print(f"已标记段落: {para_text[:30]}...")
+            #mark if contains keyword
+            if has_keyword(text):
+                left = min(word['left'] for word in words)
+                top = min(word['top'] for word in words)
+                right = max(word['right'] for word in words)
+                bottom = max(word['bottom'] for word in words)
 
+                annot = page.add_rect_annot(pymupdf.Rect(left, top, right, bottom))
+                annot.set_border(width=STR_WIDTH)
+                annot.set_colors(stroke=RED)
+                annot.update()
+
+                _print(f"Marked: {text[:]}")
+
+    file.save(OUTPUT_PATH)
+    file.close()
 
 if __name__ == "__main__":
-    settings = getConfigs()
+    [settings, files] = getConfigs()
 
-    merged_pdf = mergePDF(settings)
+    merged_pdf = mergePDF(files)
 
     markPDF(settings, merged_pdf)
 
-    _return({"success": True, "message": "success", "details": []})
+    _return({"success": True, "message": "success", "details": []}) 

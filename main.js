@@ -6,8 +6,8 @@ const fs = require('fs');
 app.whenReady().then(() => {
     function createWindow() {
         const win = new BrowserWindow({
-            width: 800,
-            height: 600,
+            width: 960,
+            height: 720,
             fullscreenable: false,
             resizable: false,
             webPreferences: {
