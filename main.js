@@ -7,6 +7,7 @@ const RATIO = 4/3;
 const WINDOW_HEIGHT = 720;
 const WINDOW_WIDTH = WINDOW_HEIGHT*RATIO;
 
+const isDev = !app.isPackaged;
 
 app.whenReady().then(() => {
     function createWindow() {
@@ -21,7 +22,7 @@ app.whenReady().then(() => {
                 nodeIntegration: false,
             }
         });
-        win.loadFile('frontend/UI.html');
+        win.loadFile(path.join(__dirname, 'frontend/UI.html'));
     }
 
     createWindow();
@@ -47,7 +48,7 @@ ipcMain.handle('open-dir-dialog', async () => {
 });
 
 ipcMain.handle('mark-pdf', async (event, settings) => {
-    const scriptPath = path.join(__dirname, 'PDFmarker.py');
+    const scriptPath = path.join(isDev? __dirname : process.resourcesPath, 'PDFmarker.py');
     
     if (!fs.existsSync(scriptPath)) throw new Error(`Python script not exist: ${scriptPath}`);
 
