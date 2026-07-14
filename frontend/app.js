@@ -23,8 +23,6 @@
             return;
         }
 
-        updateMarkButton();
-
         fileItems.forEach((item, index) => {
             const li = document.createElement('li');
             li.setAttribute("class", "file-list")
@@ -81,11 +79,14 @@
             li.appendChild(actionBtns);
             fileListEl.appendChild(li);
         });
+        
+        updateMarkButton();
     }
 
     selectOutputDir.addEventListener('click', async () => {
         const result = await window.electronAPI.openDirDialog();
         outputDirInput.value = result || '';
+        renderFileList();
     });
 
     // ----- File selection -----
@@ -113,8 +114,7 @@
     }
 
     document.getElementById('keywordInput').addEventListener('input', updateMarkButton);
-    document.getElementById('outputDirInput').addEventListener('input', updateMarkButton);
-    document.getElementById('outputNameInput').addEventListener('input', updateMarkButton);
+    document.getElementById('outputNameInput').addEventListener('change', updateMarkButton);
 
     // ----- Mark button -----
     markBtn.addEventListener('click', async () => {
