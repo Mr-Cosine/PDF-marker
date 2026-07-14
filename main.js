@@ -22,7 +22,7 @@ app.whenReady().then(() => {
                 nodeIntegration: false,
             }
         });
-        win.loadFile(path.join(__dirname, 'frontend/UI.html'));
+        win.loadFile(path.join(__dirname, 'User_Interface/UI.html'));
     }
 
     createWindow();
