@@ -130,8 +130,7 @@
         }));
 
         const settings = { keyword, vague, capital, files, outputDir, outputName };
-        const result = await window.electronAPI.markPDF(settings);
-        alert(result.message);
+        await window.electronAPI.markPDF(settings);
     });
 
     renderFileList();

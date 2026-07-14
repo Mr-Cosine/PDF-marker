@@ -48,41 +48,64 @@ ipcMain.handle('open-dir-dialog', async () => {
 });
 
 ipcMain.handle('mark-pdf', async (event, settings) => {
-    const scriptPath = path.join(isDev? __dirname : process.resourcesPath, 'PDFmarker.py');
-    
-    if (!fs.existsSync(scriptPath)) throw new Error(`Python script not exist: ${scriptPath}`);
+    try {
+        const scriptPath = path.join(isDev? __dirname: process.resourcesPath, 'PDFmarker.py');
+        if (!fs.existsSync(scriptPath)) {
+            dialog.showErrorBox("File error", `Python script not found at ${scriptPath}`);
+            reject(new Error(`Python script not found at ${scriptPath}`));
+        }
 
-    const pythonCmd = process.platform === 'win32' ? 'py' : 'python3';
+        const pythonCmd = process.platform === 'win32' ? 'py' : 'python3';
 
-    const pythonProcess = spawn(pythonCmd, [scriptPath]);
+        const pythonProcess = spawn(pythonCmd, [scriptPath]);
 
-    pythonProcess.stdin.write(JSON.stringify(settings));
-    pythonProcess.stdin.end();
+        pythonProcess.stdin.write(JSON.stringify(settings));
+        pythonProcess.stdin.end();
 
-    let outputData = '';
-    let errorData = '';
+        let outputData = '';
+        let logData = [
+            '[SETTINGS]',
+            `   - Keyword: ${settings.keyword}`,
+            `   - Vague Search: ${settings.vague}`,
+            `   - Match Capital: ${settings.capital}`,
+            `   - Files: ${settings.files.map(f => f.path).join(', ')}`,
+            `   - Output directory: ${settings.outputDir}`,
+            `   - Output file name: ${settings.outputName}`,
+            '===================================',
+            '[EXECUTION LOG]'
+        ].join('\n');
 
-    pythonProcess.stdout.on('data', (data) => {
-        outputData += data.toString();
-    });
-
-    pythonProcess.stderr.on('data', (data) => {
-        errorData += data.toString();
-        console.error(`[Python stderr] ${data}`);
-    });
-
-    return new Promise((resolve, reject) => {
-        pythonProcess.on('close', (code) => {
-            if (code !== 0) {
-                reject(new Error(`Python Exit Code ${code}\nTraceback: ${errorData}`));
-            } else {
-                try {
-                    const result = JSON.parse(outputData);
-                    resolve(result);
-                } catch (e) {
-                    reject(new Error(`JSON parsing failed: ${outputData}`));
-                }
-            }
+        pythonProcess.stdout.on('data', (data) => {
+            outputData += data.toString() + "\n";
         });
-    });
+
+        pythonProcess.stderr.on('data', (data) => {
+            logData += data.toString() + "\n";
+        });
+
+        return new Promise((resolve, reject) => {
+            pythonProcess.on('close', (code) => {
+                if (code !== 0) {
+                    dialog.showErrorBox("Error in execution", `Python exited with code ${code}\n${errorData}`);
+                    reject(new Error(`Python exited with code ${code}\n${errorData}`));
+                } 
+                else {
+                    try {
+                        const result = JSON.parse(outputData);
+                        dialog.showMessageBox({
+                                type: 'info',
+                                title: 'Success',
+                                message: logData
+                            })
+                        resolve(result);
+                    } catch (e) {
+                        dialog.showErrorBox("Error in execution", `JSON parse error: ${outputData}`);
+                        reject(new Error(`JSON parse error: ${outputData}`))
+                    }
+                }
+            });
+        });
+    } catch (e) {
+        dialog.showErrorBox('pdf-error', e);
+    }
 });

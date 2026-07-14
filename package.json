@@ -1,7 +1,7 @@
 {
   "name": "nv-request-marker",
   "version": "0.0.0",
-  "description": "marks pdf for keywords for nv requests",
+  "description": "combines and marks pdf for keywords",
   "license": "ISC",
   "author": "",
   "type": "commonjs",
@@ -9,32 +9,35 @@
   "scripts": {
     "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dist": "electron-builder"
+    "build": "electron-builder"
   },
   "devDependencies": {
     "electron": "^43.1.0",
     "electron-builder": "^26.15.3"
   },
   "build": {
-    "appId": "pdf_marker",
+    "appId": "com.yourcompany.pdfmarker",
     "productName": "PDF Marker",
     "win": {
-      "target": "nsis",
-      "icon": "build/icon.ico"
+      "target": "portable"
     },
     "files": [
-      "dist/**/*",
-      "node_modules/**/*"
+      "User_Interface/**/*",
+      "preload.js",
+      "main.js"
+    ],
+    "extraResources": [
+      {
+        "from": "PDFmarker.py",
+        "to": "PDFmarker.py"
+      },
+      {
+        "from": "TesseractOCR",
+        "to": "TesseractOCR"
+      }
     ],
     "directories": {
       "output": "release"
-    },
-    "extraResources": [
-      {
-        "from": "./TesseractOCR",
-        "to": "TesseractOCR",
-        "filter": ["**/*"]
-      }
-    ]
+    }
   }
 }
