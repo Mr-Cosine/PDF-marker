@@ -21,7 +21,8 @@
     "appId": "PDFmarker",
     "productName": "PDF Marker",
     "win": {
-      "target": "dir"
+      "target": "dir",
+      "icon": "icon.ico"
     },
     "files": [
       "User_Interface/**/*",
