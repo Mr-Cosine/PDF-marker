@@ -22,7 +22,7 @@
     "productName": "PDF Marker",
     "win": {
       "target": "dir",
-      "icon": "icon.ico"
+      "icon": "pdf-marker.ico"
     },
     "files": [
       "User_Interface/**/*",

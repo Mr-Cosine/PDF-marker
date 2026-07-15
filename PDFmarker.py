@@ -11,7 +11,8 @@ import sys
 import json
 import traceback
 from PIL import Image
-pytesseract.pytesseract.tesseract_cmd = 'TesseractOCR/tesseract.exe'
+
+pytesseract.pytesseract.tesseract_cmd = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'TesseractOCR/tesseract.exe')
 
 def _print(message): print(message, file=sys.stderr)
 
