@@ -50,9 +50,11 @@ ipcMain.handle('open-dir-dialog', async () => {
 ipcMain.handle('mark-pdf', async (event, settings) => {
     try {
         const scriptPath = path.join(isDev? __dirname: process.resourcesPath, 'PDFmarker.py');
+        console.log('scriptPath:', scriptPath);
+        console.log('exists?', fs.existsSync(scriptPath));
         if (!fs.existsSync(scriptPath)) {
             dialog.showErrorBox("File error", `Python script not found at ${scriptPath}`);
-            reject(new Error(`Python script not found at ${scriptPath}`));
+            throw(new Error(`Python script not found at ${scriptPath}`));
         }
 
         const pythonCmd = process.platform === 'win32' ? 'py' : 'python3';
@@ -74,6 +76,7 @@ ipcMain.handle('mark-pdf', async (event, settings) => {
             '===================================',
             '[EXECUTION LOG]'
         ].join('\n');
+        const startLog = logData;
 
         pythonProcess.stdout.on('data', (data) => {
             outputData += data.toString() + "\n";
@@ -86,12 +89,13 @@ ipcMain.handle('mark-pdf', async (event, settings) => {
         return new Promise((resolve, reject) => {
             pythonProcess.on('close', (code) => {
                 if (code !== 0) {
-                    dialog.showErrorBox("Error in execution", `Python exited with code ${code}\n${errorData}`);
-                    reject(new Error(`Python exited with code ${code}\n${errorData}`));
+                    dialog.showErrorBox("Error in execution", `Python exited with code ${code}\n${logData}`);
+                    reject(new Error(`Python exited with code ${code}\n${logData}`));
                 } 
                 else {
                     try {
                         const result = JSON.parse(outputData);
+                        logData += "\nSuccessfully Done.";
                         dialog.showMessageBox({
                                 type: 'info',
                                 title: 'Success',

@@ -21,8 +21,7 @@
     "appId": "PDFmarker",
     "productName": "PDF Marker",
     "win": {
-      "target": "portable",
-      "signtoolOptions": {"sign": false}
+      "target": "dir"
     },
     "files": [
       "User_Interface/**/*",
