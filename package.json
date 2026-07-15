@@ -1,6 +1,6 @@
 {
   "name": "nv-request-marker",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "description": "combines and marks pdf for keywords",
   "license": "ISC",
   "author": "",
@@ -9,17 +9,20 @@
   "scripts": {
     "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "electron-builder"
+    "build": "electron-builder",
+    "pack": "electron-packager . PDF-Marker --platform=win32 --arch=x64 --out=release --overwrite"
   },
   "devDependencies": {
     "electron": "^43.1.0",
-    "electron-builder": "^26.15.3"
+    "electron-builder": "^26.15.3",
+    "electron-packager": "^17.1.2"
   },
   "build": {
-    "appId": "com.yourcompany.pdfmarker",
+    "appId": "PDFmarker",
     "productName": "PDF Marker",
     "win": {
-      "target": "portable"
+      "target": "portable",
+      "signtoolOptions": {"sign": false}
     },
     "files": [
       "User_Interface/**/*",
