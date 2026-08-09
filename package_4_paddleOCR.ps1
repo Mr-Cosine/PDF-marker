@@ -1,0 +1,23 @@
+pyinstaller --onedir --name=PDFmarkerExecutable `
+            --specpath PDFmarkerApp_paddleOCR/info `
+            --workpath PDFmarkerApp_paddleOCR/info/build `
+            --distpath PDFmarkerApp_paddleOCR `
+            --collect-all paddleocr `
+            --collect-all pyclipper `
+            --collect-all paddle `
+            --collect-all transformers `
+            --collect-all tokenizers `
+            --collect-all pypdfium2 `
+            --collect-all cv2 `
+            --hidden-import transformers `
+            --hidden-import tokenizers `
+            --hidden-import torch `
+            --hidden-import torch.nn `
+            --hidden-import=pypdfium2 `
+            --hidden-import=numpy `
+            --hidden-import pymupdf `
+            --hidden-import paddleOCR_reader `
+            --hidden-import cv2 `
+            --add-data "D:\Coding_projects\Work automations\NV request marker\OCRmodels\PP-OCRv6_small_rec_safetensors;OCRmodels\PP-OCRv6_small_rec_safetensors" `
+            --add-data "D:\Coding_projects\Work automations\NV request marker\OCRmodels\PP-OCRv6_medium_det_safetensors;OCRmodels\PP-OCRv6_medium_det_safetensors" `
+paddleOCR_PDFmarker.py

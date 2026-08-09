@@ -2,14 +2,14 @@
   "name": "nv-request-marker",
   "version": "1.0.0",
   "description": "combines and marks pdf for keywords",
-  "license": "ISC",
+  "license": "MIT",
   "author": "",
   "type": "commonjs",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "electron-builder",
+    "build": "electron-builder --dir",
     "pack": "electron-packager . PDF-Marker --platform=win32 --arch=x64 --out=release --overwrite"
   },
   "devDependencies": {
@@ -24,6 +24,7 @@
       "target": "dir",
       "icon": "pdf-marker.ico"
     },
+    "electronLanguages": ["en-US", "zh-CN"],
     "files": [
       "User_Interface/**/*",
       "preload.js",
@@ -31,12 +32,12 @@
     ],
     "extraResources": [
       {
-        "from": "PDFmarker.py",
-        "to": "PDFmarker.py"
+        "from": "PDFMarkerApp_tesseractOCR",
+        "to": "PDFMarkerApp_tesseractOCR"
       },
       {
-        "from": "TesseractOCR",
-        "to": "TesseractOCR"
+        "from": "PDFMarkerApp_paddleOCR",
+        "to": "PDFMarkerApp_paddleOCR"
       }
     ],
     "directories": {

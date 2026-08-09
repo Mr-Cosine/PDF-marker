@@ -48,27 +48,33 @@ ipcMain.handle('open-dir-dialog', async () => {
 });
 
 ipcMain.handle('mark-pdf', async (event, settings) => {
+    const model = String(settings.model)
+    const getExePath = (m) => {
+        if (!app.isPackaged) return path.join(__dirname, 'PDFmarkerApp_' + m, 'PDFmarkerExecutable', 'PDFmarkerExecutable.exe')
+        return path.join(process.resourcesPath, 'PDFmarkerApp_' + m, 'PDFmarkerExecutable', 'PDFmarkerExecutable.exe');
+
+    };
+
+    const exePath = getExePath(model);
+
+    // 检查文件是否存在
+    if (!fs.existsSync(exePath)) {
+        const msg = `可执行文件不存在: ${exePath}`;
+        dialog.showErrorBox('文件缺失', msg);
+        throw new Error(msg);
+    }
+
     try {
-        const scriptPath = path.join(isDev? __dirname: process.resourcesPath, 'PDFmarker.py');
-        console.log('scriptPath:', scriptPath);
-        console.log('exists?', fs.existsSync(scriptPath));
-        if (!fs.existsSync(scriptPath)) {
-            dialog.showErrorBox("File error", `Python script not found at ${scriptPath}`);
-            throw(new Error(`Python script not found at ${scriptPath}`));
-        }
+        const { execFile } = require('child_process');
+        const marker = execFile(exePath);
 
-        const pythonCmd = process.platform === 'win32' ? 'py' : 'python3';
-
-        const pythonProcess = spawn(pythonCmd, [scriptPath]);
-
-        pythonProcess.stdin.write(JSON.stringify(settings));
-        pythonProcess.stdin.end();
+        marker.stdin.write(JSON.stringify(settings));
+        marker.stdin.end();
 
         let outputData = '';
         let logData = [
             '[SETTINGS]',
             `   - Keyword: ${settings.keyword}`,
-            `   - Vague Search: ${settings.vague}`,
             `   - Match Capital: ${settings.capital}`,
             `   - Files: ${settings.files.map(f => f.path).join(', ')}`,
             `   - Output directory: ${settings.outputDir}`,
@@ -76,40 +82,65 @@ ipcMain.handle('mark-pdf', async (event, settings) => {
             '===================================',
             '[EXECUTION LOG]'
         ].join('\n');
-        const startLog = logData;
 
-        pythonProcess.stdout.on('data', (data) => {
-            outputData += data.toString() + "\n";
+        marker.stdout.on('data', (data) => {
+            outputData += data.toString();
+            console.log(data)
         });
 
-        pythonProcess.stderr.on('data', (data) => {
-            logData += data.toString() + "\n";
+        marker.stderr.on('data', (data) => {
+            logData += data.toString();
+            console.log(data)
         });
 
         return new Promise((resolve, reject) => {
-            pythonProcess.on('close', (code) => {
+            marker.on('close', (code) => {
                 if (code !== 0) {
-                    dialog.showErrorBox("Error in execution", `Python exited with code ${code}\n${logData}`);
-                    reject(new Error(`Python exited with code ${code}\n${logData}`));
-                } 
-                else {
-                    try {
-                        const result = JSON.parse(outputData);
-                        logData += "\nSuccessfully Done.";
-                        dialog.showMessageBox({
-                                type: 'info',
-                                title: 'Success',
-                                message: logData
-                            })
-                        resolve(result);
-                    } catch (e) {
-                        dialog.showErrorBox("Error in execution", `JSON parse error: ${outputData}`);
-                        reject(new Error(`JSON parse error: ${outputData}`))
+                    const errorMsg = `进程退出，代码 ${code}\n${logData}`;
+                    dialog.showErrorBox('执行失败', errorMsg);
+                    reject(new Error(errorMsg));
+                } else {
+                    const result = null
+                    try {result = JSON.parse(outputData);} 
+                    catch (e) {
+                        const errorMsg = `JSON 解析失败, 原字符串: ${outputData}`;
+                        dialog.showErrorBox('解析错误', errorMsg);
+                        reject(new Error(errorMsg));
                     }
+                    if (result.success === true) {
+                        logData += '\n✅ 成功完成';
+                        dialog.showMessageBox({
+                            type: 'info',
+                            title: '运行日志',
+                            message: logData
+                        });
+                    }
+                    else {
+                        logData += '\n⚠️ 在此之后后因为错误而中断';
+                        dialog.showMessageBox({
+                            type: 'warning',
+                            title: '运行中断',
+                            message: errorMessage,
+                            detail: details,
+                            buttons: ['OK'],
+                        });
+                        dialog.showMessageBox({
+                            type: 'info',
+                            title: '运行日志',
+                            message: logData
+                        });
+                    }
+                    resolve(result);
                 }
+            });
+
+            marker.on('error', (err) => {
+                dialog.showErrorBox('启动失败', err.message);
+                reject(err);
             });
         });
     } catch (e) {
-        dialog.showErrorBox('pdf-error', e);
+        dialog.showErrorBox('意外错误', e.message);
+        throw e;
     }
 });

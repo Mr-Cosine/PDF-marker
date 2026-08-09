@@ -3,11 +3,14 @@
 
     const selectOutputDir = document.getElementById('selectOutputDirBtn');
     const outputDirInput = document.getElementById('outputDirInput');
+    const outputNameInput = document.getElementById('outputNameInput')
     const fileInput = document.getElementById('fileInput');
     const fileListEl = document.getElementById('fileList');
     const fileCountEl = document.getElementById('fileCount');
     const keywordInput = document.getElementById('keywordInput');
-    const vagueToggle = document.getElementById('vagueToggle');
+    const leniencyInput = document.getElementById('leniencyInput')
+    const capitalToggle = document.getElementById('capitalToggle')
+    const modelSelect = document.getElementById('modelSelect')
     const markBtn = document.getElementById('markBtn');
 
     function renderFileList() {
@@ -106,11 +109,12 @@
     });
 
     function updateMarkButton() {
-        const keyword = document.getElementById('keywordInput').value.trim();
-        const outputDir = document.getElementById('outputDirInput').value.trim();
-        const outputName = document.getElementById('outputNameInput').value.trim();
+        const model = modelSelect.value;
+        const outputDir = outputDirInput.value.trim();
+        const outputName = outputNameInput.value.trim();
+        const leniency = parseFloat(leniencyInput.value);
         const hasFiles = fileItems.length > 0;
-        markBtn.disabled = !(keyword && outputDir && outputName && hasFiles);
+        markBtn.disabled = !(outputDir && outputName && hasFiles && !isNaN(leniency));
     }
 
     document.getElementById('keywordInput').addEventListener('input', updateMarkButton);
@@ -118,19 +122,29 @@
 
     // ----- Mark button -----
     markBtn.addEventListener('click', async () => {
-        const keyword = document.getElementById('keywordInput').value.trim();
-        const vague = document.getElementById('vagueToggle').checked;
-        const capital = document.getElementById('capitalToggle').checked;
-        const outputDir = document.getElementById('outputDirInput').value.trim();
-        const outputName = document.getElementById('outputNameInput').value.trim();
+        const model = modelSelect.value;
+        const keyword = keywordInput.value.trim();
+        const capital = capitalToggle.checked;
+        const outputDir = outputDirInput.value.trim();
+        const outputName = outputNameInput.value.trim();
+        const leniency = parseFloat(leniencyInput.value)
 
         const files = fileItems.map((item, index) => ({
             index: index,
             path: item.path
         }));
 
-        const settings = { keyword, vague, capital, files, outputDir, outputName };
-        await window.electronAPI.markPDF(settings);
+        const settings = { model, keyword, capital, files, leniency, outputDir, outputName };
+        markBtn.disabled = true
+
+        const ogMarkBtnText = markBtn.textContent
+        markBtn.textContent = "标注中 Annotating..."
+
+        try {await window.electronAPI.markPDF(settings);} 
+        finally {
+            markBtn.disabled = false;
+            markBtn.textContent = ogMarkBtnText;
+        }
     });
 
     renderFileList();
