@@ -30,4 +30,5 @@ pyinstaller --onedir --name=PDFmarkerExecutable `
             --add-data "D:\Coding_projects\Work automations\NV request marker\OCRmodels\TesseractOCR;OCRmodels\TesseractOCR" `
             --add-data "D:\Coding_projects\Work automations\NV request marker\OCRmodels\PP-OCRv6_small_rec_safetensors;OCRmodels\PP-OCRv6_small_rec_safetensors" `
             --add-data "D:\Coding_projects\Work automations\NV request marker\OCRmodels\PP-OCRv6_medium_det_safetensors;OCRmodels\PP-OCRv6_medium_det_safetensors" `
+            --noconfirm `
 backend.py

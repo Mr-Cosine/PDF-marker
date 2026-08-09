@@ -83,14 +83,14 @@ if __name__ == "__main__":
         if isinstance(model, str):
             model = model.strip()
         if model == "tesseractOCR":
-            import tesseractOCR_reader as reader
+            import tesseractOCR_PDFmarker as PDFmarker
         elif model == "paddleOCR":
-            import paddleOCR_reader as reader
+            import paddleOCR_PDFmarker as PDFmarker
         else:
             raise ValueError(f"unknown model name: {model}")
 
         merged_pdf = mergePDF(files)
-        reader.markPDF(settings, merged_pdf)
+        PDFmarker.markPDF(settings, merged_pdf)
         
         _return({
             "success": True, 

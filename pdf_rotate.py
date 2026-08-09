@@ -37,7 +37,7 @@ class rotate_image_window:
 
         # 创建界面组件
         self.create_widgets()
-        self.window.update_idletasks()
+        self.window.update()
         self.update_display()
 
     def rotate_left(self):
@@ -74,8 +74,8 @@ class rotate_image_window:
         canvas_height = self.canvas.winfo_height()
         # 若 Canvas 尚未布局，使用默认窗口尺寸
         if canvas_width <= 1 or canvas_height <= 1:
-            canvas_width = 540
-            canvas_height = 480
+            canvas_width = 360
+            canvas_height = 360
 
         # 计算缩放比例，使图像完全放入 Canvas 并保持比例
         img_width, img_height = rotated.size
