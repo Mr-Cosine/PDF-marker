@@ -119,8 +119,8 @@ def markPDF(settings, pdf_file):
         # 4. 坐标映射准备
         # PDF 页面尺寸（旋转后视图）
         page_rect = page.rect
-        scale_x = page_rect.width / height   # 像素 → 点 (宽度)
-        scale_y = page_rect.height / width  # 像素 → 点 (高度)
+        scale_x = page_rect.width / width   # 像素 → 点 (宽度)
+        scale_y = page_rect.height / height  # 像素 → 点 (高度)
 
         for i, para in enumerate(paragraphs):
             # ---- 先判断整个段落是否匹配关键词 ----

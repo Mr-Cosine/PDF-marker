@@ -175,14 +175,15 @@ def revert_rotation_image(input_image, angle):
     else: return input_image
 
 def revert_rotation_points(points, angle, orig_shape):
-    if angle == 0: return points
+    if angle == 0:
+        return points
 
     h, w = orig_shape
-
     if angle == 90:
-        return [(y, h - 1 - x) for x, y in points]
+        return [(w - 1 - y, x) for x, y in points] 
     elif angle == 180:
         return [(w - 1 - x, h - 1 - y) for x, y in points]
     elif angle == 270:
-        return [(h - 1 - y, x) for x, y in points]
-    else: return points
+        return [(y, h - 1 - x) for x, y in points]
+    else:
+        return points
