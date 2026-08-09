@@ -80,12 +80,10 @@ class read_paragraph:
         self._bottomright_point = None
 
     def append(self, snippet):
-        """添加一个 snippet，并自动更新聚合属性"""
         self._snippets.append(snippet)
         self._recalc()
 
     def extend(self, snippets):
-        """批量添加 snippets"""
         self._snippets.extend(snippets)
         self._recalc()
 
@@ -130,8 +128,8 @@ class read_paragraph:
 
         # 5. 合并文本 (按阅读顺序: 先上后下, 同 top 则左到右)
         sorted_snippets = sorted(self._snippets, key=lambda s: (s.top_bound(), s.left_bound()))
-        self._texts = [s.text() or '' for s in sorted_snippets]
-        self._text = ' '.join(self._texts).strip()
+        self._texts = [s.text() or "" for s in sorted_snippets]
+        self._text = " ".join(self._texts).strip()
 
     # ----- 属性访问器 (与 read_snippet 兼容) -----
     def image(self): return self._snippets[0].image() if self._snippets else None

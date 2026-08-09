@@ -1,7 +1,7 @@
 pyinstaller --onedir --name=PDFmarkerExecutable `
-            --specpath PDFmarkerApp_paddleOCR/info `
-            --workpath PDFmarkerApp_paddleOCR/info/build `
-            --distpath PDFmarkerApp_paddleOCR `
+            --specpath PDFmarkerApp/info `
+            --workpath PDFmarkerApp/info/build `
+            --distpath PDFmarkerApp `
             --collect-all paddleocr `
             --collect-all pyclipper `
             --collect-all paddle `
@@ -9,6 +9,8 @@ pyinstaller --onedir --name=PDFmarkerExecutable `
             --collect-all tokenizers `
             --collect-all pypdfium2 `
             --collect-all cv2 `
+            --collect-binaries paddle `
+            --collect-binaries torch `
             --hidden-import transformers `
             --hidden-import tokenizers `
             --hidden-import torch `
@@ -16,8 +18,16 @@ pyinstaller --onedir --name=PDFmarkerExecutable `
             --hidden-import=pypdfium2 `
             --hidden-import=numpy `
             --hidden-import pymupdf `
-            --hidden-import paddleOCR_reader `
             --hidden-import cv2 `
+            --hidden-import pytesseract `
+            --hidden-import PIL `
+            --hidden-import paddleOCR_reader `
+            --hidden-import tesseractOCR_reader `
+            --hidden-import paddleOCR_PDFmarker `
+            --hidden-import tesseractOCR_PDFmarker `
+            --hidden-import page_elements `
+            --hidden-import pdf_rotate `
+            --add-data "D:\Coding_projects\Work automations\NV request marker\OCRmodels\TesseractOCR;OCRmodels\TesseractOCR" `
             --add-data "D:\Coding_projects\Work automations\NV request marker\OCRmodels\PP-OCRv6_small_rec_safetensors;OCRmodels\PP-OCRv6_small_rec_safetensors" `
             --add-data "D:\Coding_projects\Work automations\NV request marker\OCRmodels\PP-OCRv6_medium_det_safetensors;OCRmodels\PP-OCRv6_medium_det_safetensors" `
-paddleOCR_PDFmarker.py
+backend.py

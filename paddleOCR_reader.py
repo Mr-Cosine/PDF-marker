@@ -11,15 +11,15 @@ def read(image, model_det, model_rec):
     :param image:           numpy.array                the image
 
     :return:                status, content     
-                            if success: status = 'success', content = None
-                            if error:   status = 'error',   content = 'error message'
+                            if success: status = "success", content = None
+                            if error:   status = "error",   content = "error message"
     """
 
     output = model_det.predict(image)
 
     all_snippets = []
     for res in output:
-        dt_polys = res['dt_polys']
+        dt_polys = res["dt_polys"]
         for _, poly in enumerate(dt_polys):
             new_snippet = read_snippet(poly[0], poly[1], poly[2], poly[3])
             if (new_snippet._top < new_snippet._bottom and 
@@ -30,7 +30,7 @@ def read(image, model_det, model_rec):
                 all_snippets.append(new_snippet)
 
     for snippet in all_snippets:
-        snippet.set_text(model_rec.predict(snippet.image())[0].get('rec_text', '') or '')
+        snippet.set_text(model_rec.predict(snippet.image())[0].get("rec_text", "") or "")
 
     return all_snippets
 

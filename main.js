@@ -48,14 +48,12 @@ ipcMain.handle('open-dir-dialog', async () => {
 });
 
 ipcMain.handle('mark-pdf', async (event, settings) => {
-    const model = String(settings.model)
-    const getExePath = (m) => {
-        if (!app.isPackaged) return path.join(__dirname, 'PDFmarkerApp_' + m, 'PDFmarkerExecutable', 'PDFmarkerExecutable.exe')
-        return path.join(process.resourcesPath, 'PDFmarkerApp_' + m, 'PDFmarkerExecutable', 'PDFmarkerExecutable.exe');
-
+    const getExePath = () => {
+        if (!app.isPackaged) return path.join(__dirname, 'PDFmarkerApp', 'PDFmarkerExecutable', 'PDFmarkerExecutable.exe')
+        return path.join(process.resourcesPath, 'PDFmarkerApp', 'PDFmarkerExecutable', 'PDFmarkerExecutable.exe');
     };
 
-    const exePath = getExePath(model);
+    const exePath = getExePath();
 
     // 检查文件是否存在
     if (!fs.existsSync(exePath)) {
@@ -99,13 +97,14 @@ ipcMain.handle('mark-pdf', async (event, settings) => {
                     const errorMsg = `进程退出，代码 ${code}\n${logData}`;
                     dialog.showErrorBox('执行失败', errorMsg);
                     reject(new Error(errorMsg));
-                } else {
-                    const result = null
+                } 
+                else {
+                    let result = null
                     try {result = JSON.parse(outputData);} 
                     catch (e) {
-                        const errorMsg = `JSON 解析失败, 原字符串: ${outputData}`;
-                        dialog.showErrorBox('解析错误', errorMsg);
-                        reject(new Error(errorMsg));
+                        const error = `JSON 解析失败, 原字符串: ${outputData}`;
+                        dialog.showErrorBox('解析错误', error);
+                        reject(new Error(error));
                     }
                     if (result.success === true) {
                         logData += '\n✅ 成功完成';
@@ -120,8 +119,8 @@ ipcMain.handle('mark-pdf', async (event, settings) => {
                         dialog.showMessageBox({
                             type: 'warning',
                             title: '运行中断',
-                            message: errorMessage,
-                            detail: details,
+                            message: result.message,
+                            detail: result.details.join('\n'),
                             buttons: ['OK'],
                         });
                         dialog.showMessageBox({

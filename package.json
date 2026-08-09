@@ -32,12 +32,8 @@
     ],
     "extraResources": [
       {
-        "from": "PDFMarkerApp_tesseractOCR",
-        "to": "PDFMarkerApp_tesseractOCR"
-      },
-      {
-        "from": "PDFMarkerApp_paddleOCR",
-        "to": "PDFMarkerApp_paddleOCR"
+        "from": "PDFMarkerApp",
+        "to": "PDFMarkerApp"
       }
     ],
     "directories": {

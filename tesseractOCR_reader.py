@@ -5,13 +5,13 @@ OCR core logics
 import pytesseract
 from page_elements import read_snippet, read_paragraph
 
-def read(image, lang='eng+chi_sim', psm=3):
+def read(image, lang="eng+chi_sim", psm=3):
     """
     使用 Tesseract 进行文本检测和识别。
-    返回：read_snippet 列表，每个 snippet 代表一个文本行。
+    返回: read_snippet 列表，每个 snippet 代表一个文本行。
     参数：
         image : numpy.ndarray   (RGB 图像，已被校正方向)
-        lang  : str             语言代码，默认 'eng'
+        lang  : str             语言代码，默认 "eng"
         psm   : int             Page Segmentation Mode，默认 6 (统一文本块)
     """
     # 获取详细的识别结果（包含单词位置）
@@ -19,39 +19,39 @@ def read(image, lang='eng+chi_sim', psm=3):
         image,
         output_type=pytesseract.Output.DICT,
         lang=lang,
-        config=f'--psm {psm}'
+        config=f"--psm {psm}"
     )
 
     # 按 (block_num, par_num, line_num) 将单词聚合成文本行
     lines = {}
-    n_boxes = len(data['level'])
+    n_boxes = len(data["level"])
     for i in range(n_boxes):
-        text = data['text'][i].strip()
+        text = data["text"][i].strip()
         if not text:
             continue
-        line_key = (data['block_num'][i], data['par_num'][i], data['line_num'][i])
-        x, y, w, h = data['left'][i], data['top'][i], data['width'][i], data['height'][i]
+        line_key = (data["block_num"][i], data["par_num"][i], data["line_num"][i])
+        x, y, w, h = data["left"][i], data["top"][i], data["width"][i], data["height"][i]
 
         if line_key not in lines:
             lines[line_key] = {
-                'texts': [text],
-                'left': x, 'top': y,
-                'right': x + w, 'bottom': y + h
+                "texts": [text],
+                "left": x, "top": y,
+                "right": x + w, "bottom": y + h
             }
         else:
-            lines[line_key]['texts'].append(text)
-            lines[line_key]['left']   = min(lines[line_key]['left'], x)
-            lines[line_key]['top']    = min(lines[line_key]['top'], y)
-            lines[line_key]['right']  = max(lines[line_key]['right'], x + w)
-            lines[line_key]['bottom'] = max(lines[line_key]['bottom'], y + h)
+            lines[line_key]["texts"].append(text)
+            lines[line_key]["left"]   = min(lines[line_key]["left"], x)
+            lines[line_key]["top"]    = min(lines[line_key]["top"], y)
+            lines[line_key]["right"]  = max(lines[line_key]["right"], x + w)
+            lines[line_key]["bottom"] = max(lines[line_key]["bottom"], y + h)
 
     # 为每一行构建 read_snippet 对象
     all_snippets = []
     for line_key, line_data in lines.items():
-        l = line_data['left']
-        t = line_data['top']
-        r = line_data['right']
-        b = line_data['bottom']
+        l = line_data["left"]
+        t = line_data["top"]
+        r = line_data["right"]
+        b = line_data["bottom"]
         if r <= l or b <= t:
             continue
 
@@ -61,7 +61,7 @@ def read(image, lang='eng+chi_sim', psm=3):
         p3 = (r, b)
         p4 = (l, b)
         snippet = read_snippet(p1, p2, p3, p4)
-        snippet.set_text(' '.join(line_data['texts']))
+        snippet.set_text(" ".join(line_data["texts"]))
         snippet.set_image(None)   # 不保留裁剪图像
         all_snippets.append(snippet)
 

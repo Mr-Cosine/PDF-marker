@@ -2,84 +2,32 @@
 text recognition and annotation marking
 """
 
-def _print(message): print(message, file=sys.stderr, flush=True)
+import os
+import sys
+import pymupdf
+import numpy
+from PIL import Image
+import paddleOCR_reader
+from paddleocr import TextDetection, TextRecognition
+import pdf_rotate
+from pdf_rotate import revert_rotation_image, revert_rotation_points
 
-def _return(message): print(json.dumps(message), flush=True)
+def _print(message): print(message, file=sys.stderr, flush=True)
 
 def get_model_path(name):
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(base_dir, 'OCRmodels', name)
+    path = os.path.join(base_dir, "OCRmodels", name)
+
     if os.path.exists(path): return path
     else: raise FileNotFoundError(f"PaddleOCR model not found at:{path}")
 
-def get_configs():
-    raw = sys.stdin.buffer.read().decode('utf-8')
-    if not raw:
-        raise ValueError("stdin is empty")
-    
-    settings = json.loads(raw)
-
-    keyword = settings.get('keyword', None)
-    capital = settings.get('capital', None)
-    leniency = settings.get('leniency', None)
-    output_dir = settings.get('outputDir', None)
-    output_name = settings.get('outputName', None)
-    files = settings.get('files', None)
-
-    if not all([capital is not None and isinstance(capital, bool), 
-                leniency is not None and leniency > 0, 
-                files is not None and len(files) > 0, 
-                output_dir is not None and len(output_dir) > 0, 
-                output_name is not None and len(output_name) > 0]):
-        raise ValueError("Invalid input parameters: capital, output directory, and files are required.")
-
-    return { 
-        'keyword': keyword,
-        'capital': capital,
-        'leniency': leniency,
-        'output_dir': output_dir,
-        'output_name': output_name,
-    }, files
-
-def mergePDF(files):
-    if len(files) == 0:
-        raise ValueError("empty files list")
-
-    try:
-        files.sort(key=lambda x: x.get('index', 0))
-    except Exception as e:
-        raise Exception(f"error in sorting the files: {e}")
-    
-    merged_pdf = pymupdf.open()
-
-    for pdf in files:
-        pdf_path = pdf.get('path')
-        if not pdf_path:
-            continue
-        pdf_path = os.path.normpath(pdf_path)
-        if not os.path.exists(pdf_path):
-            _print(f"File not exist: {pdf_path}")
-            continue
-        
-        try:
-            with open(pdf_path, 'rb') as f:
-                data = f.read()
-            doc = pymupdf.open(stream=data, filetype="pdf")
-            merged_pdf.insert_pdf(doc)
-            doc.close()
-        except Exception as e:
-            _print(f"Opening file failed - {pdf_path}: {e}")
-            continue
-
-    return merged_pdf
-
 def markPDF(settings, pdf_file):
     # 解析设置
-    keyword = settings.get('keyword', None)
-    capital = settings.get('capital', None)
-    leniency = settings.get('leniency', None)
-    output_dir = settings.get('output_dir', None)
-    output_name = settings.get('output_name', None)
+    keyword = settings.get("keyword", None)
+    capital = settings.get("capital", None)
+    leniency = settings.get("leniency", None)
+    output_dir = settings.get("output_dir", None)
+    output_name = settings.get("output_name", None)
 
     if not all([capital is not None and isinstance(capital, bool), 
                 leniency is not None and leniency > 0,  
@@ -95,7 +43,7 @@ def markPDF(settings, pdf_file):
         pdf_file.save(output_path)
         return
 
-    _print('have keyword, start reading.')
+    _print("have keyword, start reading.")
 
     keywords = keyword.split()
 
@@ -117,7 +65,7 @@ def markPDF(settings, pdf_file):
             if not remaining: return True
         return False
 
-    _print('using tesseractOCR')
+    _print("using tesseractOCR")
     _print("loading OCR models...")
     
     # 初始化 OCR 模型（只加载一次）
@@ -133,7 +81,7 @@ def markPDF(settings, pdf_file):
             engine="transformers"
         )
     except Exception:
-        raise ImportError('Failed loading PaddleOCR models')
+        raise ImportError("Failed loading OCR model")
 
     _print("loaded OCR model successfully, start processing")
 
@@ -154,14 +102,14 @@ def markPDF(settings, pdf_file):
 
     upright_pages = pdf_rotate.show_window(page_images)
     if upright_pages is None: upright_pages = page_images
-    if len(upright_pages) != len(pdf_file): raise ValueError('invalid corrected pages.')
+    if len(upright_pages) != len(pdf_file): raise ValueError("invalid corrected pages.")
 
     # 对每一页进行处理
     for idx, upright_page in enumerate(upright_pages):
         _print("================================")
         page = pdf_file[idx]
-        page_image = upright_page['image']
-        page_rotation = upright_page['rotation']
+        page_image = upright_page["image"]
+        page_rotation = upright_page["rotation"]
         [height, width] = revert_rotation_image(page_image, page_rotation).shape[:2]
 
         # 提取文本行，分组为段落
@@ -203,38 +151,3 @@ def markPDF(settings, pdf_file):
     # 保存修改后的 PDF
     pdf_file.save(output_path)
     return
-
-if __name__ == "__main__":
-    merged_pdf = None
-    try:
-        import json
-        import os
-        import sys 
-        import pymupdf
-        import traceback
-        import numpy
-        from PIL import Image
-        import paddleOCR_reader
-        from paddleocr import TextDetection, TextRecognition
-        import pdf_rotate
-        from pdf_rotate import revert_rotation_image, revert_rotation_points
-    
-        [settings, files] = get_configs()
-        merged_pdf = mergePDF(files)
-        markPDF(settings, merged_pdf)
-        
-        _return({
-            "success": True, 
-            "message": "success", 
-            "details": []
-            }) 
-
-    except Exception as e:
-        _return({
-            "success": False, 
-            "message": f"Error: {str(e)}", 
-            "details": [traceback.format_exc()]
-            })
-
-    finally:
-        merged_pdf.close()

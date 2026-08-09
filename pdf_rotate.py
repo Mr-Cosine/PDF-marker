@@ -17,7 +17,7 @@ class rotate_image_window:
     _active_page_num = 0
 
     def __init__(self, master, title, images):
-        self._pages = [{'image': image, 'rotation': 0} for image in images] #PIL image object + orientation
+        self._pages = [{"image": image, "rotation": 0} for image in images] #PIL image object + orientation
         self._active_page_num = 0
 
         # 创建顶层窗口
@@ -27,11 +27,11 @@ class rotate_image_window:
         self.window.resizable(False, False)
 
         # 绑定键盘快捷键
-        self.window.bind('<Left>', self.rotate_left)
-        self.window.bind('<Right>', self.rotate_right)
-        self.window.bind('<Up>', self.page_up)
-        self.window.bind('<Down>', self.page_dn)
-        self.window.bind('<Return>', self.page_dn)
+        self.window.bind("<Left>", self.rotate_left)
+        self.window.bind("<Right>", self.rotate_right)
+        self.window.bind("<Up>", self.page_up)
+        self.window.bind("<Down>", self.page_dn)
+        self.window.bind("<Return>", self.page_dn)
         self.window.protocol("WM_DELETE_WINDOW", self.quit_app)
         self.window.focus_set()  # 确保窗口捕获键盘事件
 
@@ -41,12 +41,12 @@ class rotate_image_window:
         self.update_display()
 
     def rotate_left(self):
-        self._pages[self._active_page_num]['rotation'] += 90
-        if self._pages[self._active_page_num]['rotation'] >= 360: self._pages[self._active_page_num]['rotation'] -= 360
+        self._pages[self._active_page_num]["rotation"] += 90
+        if self._pages[self._active_page_num]["rotation"] >= 360: self._pages[self._active_page_num]["rotation"] -= 360
         self.update_display()
     def rotate_right(self):
-        self._pages[self._active_page_num]['rotation'] -= 90
-        if self._pages[self._active_page_num]['rotation'] < 0: self._pages[self._active_page_num]['rotation'] += 360
+        self._pages[self._active_page_num]["rotation"] -= 90
+        if self._pages[self._active_page_num]["rotation"] < 0: self._pages[self._active_page_num]["rotation"] += 360
         self.update_display()
 
     def page_up(self):
@@ -63,8 +63,8 @@ class rotate_image_window:
     def update_display(self):
         # 获取当前页数据和旋转角度
         active_page = self._pages[self._active_page_num]
-        img = active_page['image']
-        angle = active_page['rotation']
+        img = active_page["image"]
+        angle = active_page["rotation"]
 
         # 旋转图像（使用 PIL）
         rotated = img.rotate(angle, expand=True)
@@ -100,12 +100,12 @@ class rotate_image_window:
         self.canvas.create_text(
             10, 10, anchor=tkinter.NW,
             text=f"第 {self._active_page_num + 1} / {len(self._pages)} 页",
-            fill='red', font=('Arial', 10)
+            fill="red", font=("Arial", 10)
         )
 
     def create_widgets(self):
         # Main label – top, centered
-        lbl1 = tkinter.Label(self.window, text="调整 PDF 页面朝向", font=('Arial', 12))
+        lbl1 = tkinter.Label(self.window, text="调整 PDF 页面朝向", font=("Arial", 12))
         lbl1.pack(pady=(10, 5))
 
         # Container for the two control groups – will be centered
@@ -114,7 +114,7 @@ class rotate_image_window:
 
         # ---- Rotation controls ----
         rot_frame = tkinter.Frame(controls_container)
-        tkinter.Label(rot_frame, text="页面操作", font=('Arial', 10)).pack(pady=2)
+        tkinter.Label(rot_frame, text="页面操作", font=("Arial", 10)).pack(pady=2)
         rot_btns = tkinter.Frame(rot_frame)
         rot_btns.pack()
         tkinter.Button(rot_btns, text="←逆时针旋转", command=self.rotate_left).pack(side=tkinter.LEFT, padx=3)
@@ -123,7 +123,7 @@ class rotate_image_window:
 
         # ---- Page navigation ----
         page_frame = tkinter.Frame(controls_container)
-        tkinter.Label(page_frame, text="选择页面", font=('Arial', 10)).pack(pady=2)
+        tkinter.Label(page_frame, text="选择页面", font=("Arial", 10)).pack(pady=2)
         page_btns = tkinter.Frame(page_frame)
         page_btns.pack()
         tkinter.Button(page_btns, text="↑上一页", command=self.page_up).pack(side=tkinter.LEFT, padx=3)
@@ -138,7 +138,7 @@ class rotate_image_window:
         # Canvas (occupies remaining space)
         self.canvas = tkinter.Canvas(
                                     self.window, 
-                                    bg='gray',
+                                    bg="gray",
                                     highlightthickness=0,
                                     borderwidth=0
                                     )
@@ -148,11 +148,11 @@ class rotate_image_window:
         """Return list of rotated PIL images and their final rotation angles."""
         result = []
         for item in self._pages:
-            img = item['image']
-            angle = item['rotation'] % 360
+            img = item["image"]
+            angle = item["rotation"] % 360
             if angle != 0: rotated_img = img.rotate(angle, expand=True)
             else: rotated_img = img
-            result.append({'image': rotated_img, 'rotation': angle})
+            result.append({"image": rotated_img, "rotation": angle})
         return result
 
     def get_rotated_info_only(self):
@@ -167,7 +167,7 @@ def show_window(images): #image: numpy array
     app = rotate_image_window(root, "Adjust page orientation", PIL_image)
     root.mainloop()
     rotated = app.get_rotated()
-    return [{'image': PILimage_to_NParray(rotated_page['image']), 'rotation': rotated_page['rotation']} for rotated_page in rotated]
+    return [{"image": PILimage_to_NParray(rotated_page["image"]), "rotation": rotated_page["rotation"]} for rotated_page in rotated]
 
 def revert_rotation_image(input_image, angle):
     image = NParray_to_PILimage(input_image)
