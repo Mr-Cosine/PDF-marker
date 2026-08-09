@@ -23,7 +23,7 @@ def get_model_path(name):
     path = os.path.join(base_dir, 'OCRmodels', name)
     if os.path.exists(path): return path
     else: raise FileNotFoundError(f"PaddleOCR model not found at:{path}")
-
+    
 def get_configs():
     raw = sys.stdin.buffer.read().decode('utf-8')
     if not raw:
