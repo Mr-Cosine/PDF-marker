@@ -186,15 +186,3 @@ def revert_rotation_points(points, angle, orig_shape):
     elif angle == 270:
         return [(h - 1 - y, x) for x, y in points]
     else: return points
-
-if __name__ == "__main__":
-    from PIL import ImageDraw
-    test_images = []
-    for i in range(3):
-        img = Image.new('RGB', (300, 200), color=(100 + i*50, 150, 200))
-        draw = ImageDraw.Draw(img)
-        draw.text((50, 80), f"Page {i+1}", fill='black')
-        test_images.append(numpy.array(img))
-        
-    result = show_window(test_images)
-    print("over")

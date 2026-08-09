@@ -2,18 +2,6 @@
 text recognition and annotation marking
 """
 
-import json
-import os
-import sys 
-import pymupdf
-import traceback
-import numpy
-from PIL import Image
-import paddleOCR_reader
-from paddleocr import TextDetection, TextRecognition
-import pdf_rotate
-from pdf_rotate import revert_rotation_image, revert_rotation_points
-
 def _print(message): print(message, file=sys.stderr, flush=True)
 
 def _return(message): print(json.dumps(message), flush=True)
@@ -23,7 +11,7 @@ def get_model_path(name):
     path = os.path.join(base_dir, 'OCRmodels', name)
     if os.path.exists(path): return path
     else: raise FileNotFoundError(f"PaddleOCR model not found at:{path}")
-    
+
 def get_configs():
     raw = sys.stdin.buffer.read().decode('utf-8')
     if not raw:
@@ -219,9 +207,22 @@ def markPDF(settings, pdf_file):
 if __name__ == "__main__":
     merged_pdf = None
     try:
+        import json
+        import os
+        import sys 
+        import pymupdf
+        import traceback
+        import numpy
+        from PIL import Image
+        import paddleOCR_reader
+        from paddleocr import TextDetection, TextRecognition
+        import pdf_rotate
+        from pdf_rotate import revert_rotation_image, revert_rotation_points
+    
         [settings, files] = get_configs()
         merged_pdf = mergePDF(files)
         markPDF(settings, merged_pdf)
+        
         _return({
             "success": True, 
             "message": "success", 

@@ -2,18 +2,6 @@
 text recognition and annotation marking
 """
 
-import json
-import os
-import sys 
-import pymupdf
-import pytesseract
-import traceback
-import numpy
-from PIL import Image
-import tesseractOCR_reader
-import pdf_rotate
-from pdf_rotate import revert_rotation_image, revert_rotation_points
-
 def _print(message): print(message, file=sys.stderr, flush=True)
 
 def _return(message): print(json.dumps(message), flush=True)
@@ -215,9 +203,22 @@ def markPDF(settings, pdf_file):
 if __name__ == "__main__":
     merged_pdf = None
     try:
+        import json
+        import os
+        import sys 
+        import pymupdf
+        import pytesseract
+        import traceback
+        import numpy
+        from PIL import Image
+        import tesseractOCR_reader
+        import pdf_rotate
+        from pdf_rotate import revert_rotation_image, revert_rotation_points
+    
         [settings, files] = get_configs()
         merged_pdf = mergePDF(files)
         markPDF(settings, merged_pdf)
+        
         _return({
             "success": True, 
             "message": "success", 
