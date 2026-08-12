@@ -62,7 +62,7 @@ def read(image, lang="eng+chi_sim", psm=3):
         p4 = (l, b)
         snippet = read_snippet(p1, p2, p3, p4)
         snippet.set_text(" ".join(line_data["texts"]))
-        snippet.set_image(None)   # 不保留裁剪图像
+        snippet.set_image(None)
         all_snippets.append(snippet)
 
     return all_snippets

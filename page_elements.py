@@ -1,6 +1,14 @@
 import numpy
 import cv2
 
+class pdf_page:
+    def __init__(self, image, width, height, rotation=0, content=[]):
+        self.image = image
+        self.rotation = rotation
+        self.content = content
+        self.width = width
+        self.height = height
+
 class read_snippet:
     def __init__(self, p1, p2, p3, p4, image=None):
         self._pts = numpy.array([p1, p2, p3, p4], dtype=numpy.float32)

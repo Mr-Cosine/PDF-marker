@@ -5,6 +5,7 @@ interactive pdf rotation
 import tkinter
 from PIL import ImageTk, Image
 import numpy
+from page_elements import pdf_page
 
 def NParray_to_PILimage(numpy_array):
     return Image.fromarray(numpy_array)
@@ -149,10 +150,11 @@ class rotate_image_window:
         result = []
         for item in self._pages:
             img = item["image"]
-            angle = item["rotation"] % 360
-            if angle != 0: rotated_img = img.rotate(angle, expand=True)
+            rotation = item["rotation"] % 360
+            if rotation != 0: rotated_img = img.rotate(rotation, expand=True)
             else: rotated_img = img
-            result.append({"image": rotated_img, "rotation": angle})
+            [height, width] = PILimage_to_NParray(img).shape[:2]
+            result.append({"image": rotated_img, "rotation": rotation, "width": width, "height": height})
         return result
 
     def get_rotated_info_only(self):
@@ -167,12 +169,12 @@ def show_window(images): #image: numpy array
     app = rotate_image_window(root, "Adjust page orientation", PIL_image)
     root.mainloop()
     rotated = app.get_rotated()
-    return [{"image": PILimage_to_NParray(rotated_page["image"]), "rotation": rotated_page["rotation"]} for rotated_page in rotated]
-
-def revert_rotation_image(input_image, angle):
-    image = NParray_to_PILimage(input_image)
-    if angle != 0: return PILimage_to_NParray(image.rotate(-angle, expand=True))
-    else: return input_image
+    return [pdf_page(
+                     image=PILimage_to_NParray(rotated_page["image"]), 
+                     rotation=rotated_page["rotation"], 
+                     width=rotated_page["width"], 
+                     height=rotated_page["Height"]
+                    ) for rotated_page in rotated]
 
 def revert_rotation_points(points, angle, orig_shape):
     if angle == 0:

@@ -1,10 +1,7 @@
 """
 Reader starter, communication with frontend
 """
-
-def _print(message): print(message, file=sys.stderr, flush=True)
-
-def _return(message): print(json.dumps(message), flush=True)
+import IPC
 
 def get_configs():
     raw = sys.stdin.buffer.read().decode("utf-8")
@@ -38,24 +35,24 @@ def get_configs():
     }, files
 
 def mergePDF(files):
-    if len(files) == 0:
-        raise ValueError("empty files list")
+    if len(files) == 0: raise ValueError("empty files list")
 
     try:
         files.sort(key=lambda x: x.get("index", 0))
     except Exception as e:
-        raise Exception(f"error in sorting the files: {e}")
+        raise Exception(f"Error in sorting the files: {e}")
     
     merged_pdf = pymupdf.open()
 
-    for pdf in files:
+    for pdf_num, pdf in enumerate(files):
+        IPC.report(f"Merging PDF, progress: [{pdf_num}/{len(pdf)}]")
+
         pdf_path = pdf.get("path")
         if not pdf_path:
             continue
         pdf_path = os.path.normpath(pdf_path)
         if not os.path.exists(pdf_path):
-            _print(f"File not exist: {pdf_path}")
-            continue
+            raise FileNotFoundError(f"File not exist: {pdf_path}")
         
         try:
             with open(pdf_path, "rb") as f:
@@ -64,8 +61,7 @@ def mergePDF(files):
             merged_pdf.insert_pdf(doc)
             doc.close()
         except Exception as e:
-            _print(f"Opening file failed - {pdf_path}: {e}")
-            continue
+            raise ValueError(f"Opening file failed - {pdf_path}: {e}")
 
     return merged_pdf
 
@@ -77,33 +73,48 @@ if __name__ == "__main__":
         import sys 
         import pymupdf
         import traceback
-    
+
+        # the resolution when render pdf in dpi
+        RENDER_RES = 150
+
+        IPC.report("Loading configurations...")
         [settings, files] = get_configs()
+        settings.update({"dpi": RENDER_RES})
+
         model = settings.get("model", None)
-        if isinstance(model, str):
-            model = model.strip()
-        if model == "tesseractOCR":
-            import tesseractOCR_PDFmarker as PDFmarker
-        elif model == "paddleOCR":
-            import paddleOCR_PDFmarker as PDFmarker
-        else:
-            raise ValueError(f"unknown model name: {model}")
-
-        merged_pdf = mergePDF(files)
-        PDFmarker.markPDF(settings, merged_pdf)
+        if isinstance(model, str): model = model.strip()
         
-        _return({
-            "success": True, 
-            "message": "success", 
-            "details": []
-            }) 
+        if model is not None and model == "tesseractOCR":   import tesseractOCR_PDFmarker as PDFmarker
+        elif model is not None and model == "paddleOCR":    import paddleOCR_PDFmarker as PDFmarker
+        else: raise ValueError(f"unknown model name: {model}")
+        IPC.report("Configurations good.")
 
-    except Exception as e:
-        _return({
-            "success": False, 
-            "message": f"Error: {str(e)}", 
-            "details": [traceback.format_exc()]
+        IPC.report("Merging pdfs...")
+        merged_pdf = mergePDF(files)
+        IPC.report("Merge complete.")
+
+        IPC.report("Read and marking pdfs...")
+        PDFmarker.markPDF(settings, merged_pdf)
+        IPC.report("Finished")
+
+        merged_pdf.close()
+
+        raise SystemExit() # end the program with success
+    
+    except SystemExit:
+        IPC.resolve({
+            "success": True,
+            "message": "",
+            "details": []
             })
 
-    finally:
+    except Exception as e:
+        IPC.report("Process failed. Check pop up window for more informations.")
+
         if merged_pdf is not None: merged_pdf.close()
+
+        IPC.resolve({
+            "success": False,
+            "message": f"Error: {str(e)}",
+            "details": [traceback.format_exc()]
+            })

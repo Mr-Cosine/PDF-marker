@@ -12,6 +12,10 @@
     const capitalToggle = document.getElementById('capitalToggle')
     const modelSelect = document.getElementById('modelSelect')
     const markBtn = document.getElementById('markBtn');
+    const statusText = document.getElementById('statusText');
+    const statusBar = document.getElementById('statusBar');
+
+
 
     function renderFileList() {
         fileListEl.innerHTML = '';
@@ -136,14 +140,22 @@
 
         const settings = { model, keyword, capital, files, leniency, outputDir, outputName };
         markBtn.disabled = true
+        statusBar.classList.remove('hidden');
 
         const ogMarkBtnText = markBtn.textContent
         markBtn.textContent = "标注中 Annotating..."
 
-        try {await window.electronAPI.markPDF(settings);} 
+        try {
+            await window.electronAPI.markPDF(settings); 
+            
+            window.api.onReport((message) => {
+                statusText.textContent = message;
+            });
+        } 
         finally {
             markBtn.disabled = false;
             markBtn.textContent = ogMarkBtnText;
+            statusBar.classList.add('hidden');
         }
     });
 

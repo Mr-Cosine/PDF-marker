@@ -20,5 +20,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
      * @param {Object} settings - 包含 keyword, vague, files 的对象
      * @returns {Promise<Object>} 处理结果
      */
-    markPDF: (settings) => ipcRenderer.invoke('mark-pdf', settings)
+    markPDF: (settings) => ipcRenderer.invoke('mark-pdf', settings),
+
+    /**
+     * 更新显示的进度
+     * @param {Object} message - 字符串信息
+     */
+    updateProgress: (callback) => {
+        ipcRenderer.on('ipc-message', (event, message) => callback(message));
+    },
+    stopUpdateProgress: () => {
+        ipcRenderer.removeAllListeners('ipc-message');
+    }
 });
