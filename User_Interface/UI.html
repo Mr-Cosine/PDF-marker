@@ -23,7 +23,7 @@
                     <option value="tesseractOCR">tesseractOCR</option>
                     <option value="paddleOCR">paddleOCR</option>    
                 </select>
-                <small> ( paddleOCR is better but slower )</small>
+                <small> (paddleOCR is better but slower, only consider using it when computing resource is sufficient)</small>
             </div>
             <div class="setting-group">
                 <label for="keywordInput">搜索关键字/词 Keyword:</label>
@@ -69,7 +69,9 @@
             <button class="btn-mark" id="markBtn">标注PDF Annotate PDF</button>
         </div>
 
-        <div id="statusBar" class="status-bar hidden"></div>
+        <div id="statusBar" class="status-bar hidden">
+            <span id="statusText" class="status-text"></span>
+        </div>
     </div>
     <script src="app.js"></script>
 </body>

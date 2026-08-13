@@ -45,9 +45,10 @@ def markPDF(settings, pdf_file):
     DPI = settings.get("dpi", 150)
 
     # 多线程设置
-    os.environ["OMP_THREAD_LIMIT"] = "2"
-    os.environ["OMP_NUM_THREADS"] = "2"
-    MAX_WORKERS = 3
+    MAX_SYS_THREAD = 8
+    MAX_WORKERS = 4
+    os.environ["OMP_THREAD_LIMIT"] = f"{int((MAX_SYS_THREAD-2) / MAX_WORKERS)}"
+    os.environ["OMP_NUM_THREADS"] = f"{int((MAX_SYS_THREAD-2) / MAX_WORKERS)}"
 
     if not all([capital is not None and isinstance(capital, bool), 
                 leniency is not None and leniency > 0,  

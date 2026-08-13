@@ -1,7 +1,5 @@
 //app.js
 (function() {
-    let fileItems = [];
-
     const selectOutputDir = document.getElementById('selectOutputDirBtn');
     const outputDirInput = document.getElementById('outputDirInput');
     const outputNameInput = document.getElementById('outputNameInput')
@@ -15,8 +13,9 @@
     const markBtn = document.getElementById('markBtn');
     const statusText = document.getElementById('statusText');
     const statusBar = document.getElementById('statusBar');
-
-
+    const statusText = document.getElementById('statusText')
+    
+    let fileItems = [];
 
     function renderFileList() {
         fileListEl.innerHTML = '';
@@ -149,7 +148,7 @@
         try {
             window.electronAPI.stopUpdateProgress?.()
             window.electronAPI.updateProgress((message) => {
-                statusBar.textContent = message;
+                statusText.textContent = message;
             });
 
             await window.electronAPI.markPDF(settings); 
@@ -157,7 +156,7 @@
         finally {
             markBtn.disabled = false;
             markBtn.textContent = ogMarkBtnText;
-            statusBar.textContent = '';
+            statusText.textContent = '';
             statusBar.classList.add('hidden');
         }
     });
