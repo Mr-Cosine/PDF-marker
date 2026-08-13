@@ -342,9 +342,11 @@ h1 small {
     border: 1px solid #ddd;
     border-radius: 14px;
     font-size: 14px;
+    font-weight: bold;
     color: #0f172a;
     min-height: 40px;
     line-height: 40px;
+    align-items: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;

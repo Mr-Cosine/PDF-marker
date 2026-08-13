@@ -1,3 +1,4 @@
+//app.js
 (function() {
     let fileItems = [];
 
@@ -139,22 +140,24 @@
         }));
 
         const settings = { model, keyword, capital, files, leniency, outputDir, outputName };
-        markBtn.disabled = true
-        statusBar.classList.remove('hidden');
 
+        markBtn.disabled = true
         const ogMarkBtnText = markBtn.textContent
         markBtn.textContent = "标注中 Annotating..."
+        statusBar.classList.remove('hidden');
 
         try {
-            await window.electronAPI.markPDF(settings); 
-            
-            window.api.onReport((message) => {
-                statusText.textContent = message;
+            window.electronAPI.stopUpdateProgress?.()
+            window.electronAPI.updateProgress((message) => {
+                statusBar.textContent = message;
             });
+
+            await window.electronAPI.markPDF(settings); 
         } 
         finally {
             markBtn.disabled = false;
             markBtn.textContent = ogMarkBtnText;
+            statusBar.textContent = '';
             statusBar.classList.add('hidden');
         }
     });

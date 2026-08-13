@@ -2,12 +2,15 @@ import numpy
 import cv2
 
 class pdf_page:
-    def __init__(self, image, width, height, rotation=0, content=[]):
+    def __init__(self, page_file, page_num, image, width, height, rotation=0, content=[]):
+        self.page_file = page_file
         self.image = image
         self.rotation = rotation
         self.content = content
         self.width = width
         self.height = height
+        self.content = content
+        self.page_num = page_num
 
 class read_snippet:
     def __init__(self, p1, p2, p3, p4, image=None):

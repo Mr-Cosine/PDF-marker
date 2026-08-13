@@ -27,9 +27,11 @@ contextBridge.exposeInMainWorld('electronAPI', {
      * @param {Object} message - 字符串信息
      */
     updateProgress: (callback) => {
-        ipcRenderer.on('ipc-message', (event, message) => callback(message));
+        ipcRenderer.on('update-progress', (event, data) => {
+            callback(data.message);
+        });
     },
     stopUpdateProgress: () => {
-        ipcRenderer.removeAllListeners('ipc-message');
+        ipcRenderer.removeAllListeners('update-progress');
     }
 });

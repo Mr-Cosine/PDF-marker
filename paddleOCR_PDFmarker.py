@@ -95,65 +95,60 @@ def markPDF(settings, pdf_file):
     IPC.log("loaded OCR model successfully, start processing")
     IPC.report("Loaded OCR model successfully, start processing.")
 
-    page_images = []
-
-    # 准备pdf每一页，变成图像，摆正
+    # 准备pdf每一页，变成图像
+    pages_4_read = []
     IPC.report("Check the pop up window for pdf preview, and fix any pages not oriented upright.")
-    for page_idx in range(len(pdf_file)):
-        page = pdf_file[page_idx]
+    for page_num in range(len(pdf_file)):
+        page_file = pdf_file[page_num]
 
         zoom = DPI / 72
         mat = pymupdf.Matrix(zoom, zoom)
-        pix = page.get_pixmap(matrix=mat, colorspace=pymupdf.csGRAY)
-        page_img = numpy.array(Image.frombytes("L", [pix.width, pix.height], pix.samples))
+        pix = page_file.get_pixmap(matrix=mat, colorspace=pymupdf.csGRAY)
+        page_image = numpy.array(Image.frombytes("L", [pix.width, pix.height], pix.samples))
 
-        page_images.append(page_img)
+        pages_4_read.append(pdf_page(
+                                    page_file=page_file,
+                                    page_num=page_num,
+                                    image=page_image, 
+                                    rotation=0, 
+                                    height=page_image.shape[0], 
+                                    width=page_image.shape[1]
+                                    ))
 
-    upright_pages = pdf_rotate.show_window(page_images)
-    if upright_pages is None or len(page_images) != len(upright_pages): 
-        upright_pages = [pdf_page(
-                                image=image, 
-                                rotation=0, 
-                                height=image.shape[0], 
-                                width=image.shape[1]
-                                ) for image in page_images]
+    pdf_rotate.show_window(pages_4_read)
 
     # 对每一页进行处理
     IPC.report("Start reading...")
-    for idx, upright_page in enumerate(upright_pages):
+    for page_4_read in pages_4_read:
         IPC.log("================================")
 
-        IPC.report(f"Process page {idx + 1}: OCR recognizing texts...")
+        IPC.report(f"Processing page {page_4_read.page_num + 1}... [{page_4_read.page_num + 1}/{len(pages_4_read)}]")
 
-        page = pdf_file[idx]
-        og_height = upright_page.height
-        og_width = upright_page.width
+        page_file = page_4_read.page_file
+        og_height = page_4_read.height
+        og_width = page_4_read.width
 
         # 提取文本行，分组为段落
-        snippets_read = paddleOCR_reader.read(upright_page.image, model_det, model_rec)
-        IPC.report(f"Process page {idx + 1}: Grouping into text blocks to scan for keyword...")
+        snippets_read = paddleOCR_reader.read(page_4_read.image, model_det, model_rec)
         paragraphs = paddleOCR_reader.group_snippets_into_paragraphs(snippets_read, leniency=leniency)
 
         # 4. 坐标映射准备
         # PDF 页面尺寸（旋转后视图）
-        page_rect = page.rect
+        page_rect = page_file.rect
         scale_x = page_rect.width / og_width   # 像素 → 点 (宽度)
         scale_y = page_rect.height / og_height  # 像素 → 点 (高度)
 
         for i, para in enumerate(paragraphs):
-            filled = int(round((i+1)/len(paragraphs)) * 20)
-            IPC.report(f"Process page {idx + 1}: Marking... [{"="*filled-1}⫤{" "*(20 - filled)}]")
-            
             # ---- 先判断整个段落是否匹配关键词 ----
             has_kw = match(para.text())
             IPC.log(f"paragraph{i}: has keyword is {has_kw}")
-            IPC.log(f"{para.text()[:30]}" + ("..." if len(para.text()) > 30 else ""))
+            IPC.log(f"{para.text()[:50]}" + ("..." if len(para.text()) > 50 else ""))
             if not has_kw: continue
 
             # ---- 匹配时，画红色矩形框（段落边框） ----
             left_c, top_c, right_c, bottom_c = para.left_bound(), para.top_bound(), para.right_bound(), para.bottom_bound()
             corners_c = [(left_c, top_c), (right_c, top_c), (right_c, bottom_c), (left_c, bottom_c)]
-            corners_orig = revert_rotation_points(corners_c, upright_page.rotation, (og_height, og_width))
+            corners_orig = revert_rotation_points(corners_c, page_4_read.rotation, (og_height, og_width))
             xs = [p[0] for p in corners_orig]
             ys = [p[1] for p in corners_orig]
             left_o, right_o = min(xs), max(xs)
@@ -163,8 +158,8 @@ def markPDF(settings, pdf_file):
             y1 = top_o * scale_y
             x2 = right_o * scale_x
             y2 = bottom_o * scale_y
-            rect = pymupdf.Rect(x1, y1, x2, y2) * page.derotation_matrix
-            annot = page.add_rect_annot(rect)
+            rect = pymupdf.Rect(x1, y1, x2, y2) * page_file.derotation_matrix
+            annot = page_file.add_rect_annot(rect)
             annot.set_colors(stroke=(1, 0, 0))
             annot.set_border(width=1.5)
             annot.update()

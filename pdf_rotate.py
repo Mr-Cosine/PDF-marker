@@ -17,8 +17,8 @@ class rotate_image_window:
     _pages = []
     _active_page_num = 0
 
-    def __init__(self, master, title, images):
-        self._pages = [{"image": image, "rotation": 0} for image in images] #PIL image object + orientation
+    def __init__(self, master, title, pages):
+        self._pages = pages #PIL image object + orientation + page number
         self._active_page_num = 0
 
         # 创建顶层窗口
@@ -63,7 +63,8 @@ class rotate_image_window:
 
     def update_display(self):
         # 获取当前页数据和旋转角度
-        active_page = self._pages[self._active_page_num]
+        active_page = next((page for page in self._pages if page.get("page_num") == self._active_page_num), None)
+        if active_page is None: raise ValueError("Missing page(s)")
         img = active_page["image"]
         angle = active_page["rotation"]
 
@@ -145,36 +146,31 @@ class rotate_image_window:
                                     )
         self.canvas.pack(side=tkinter.BOTTOM, fill=tkinter.BOTH, expand=True, padx=0, pady=0)
 
-    def get_rotated(self):
+    def get_rotated(self, pages):
         """Return list of rotated PIL images and their final rotation angles."""
-        result = []
         for item in self._pages:
             img = item["image"]
+            page_num = item["page_num"]
             rotation = item["rotation"] % 360
-            if rotation != 0: rotated_img = img.rotate(rotation, expand=True)
-            else: rotated_img = img
-            [height, width] = PILimage_to_NParray(img).shape[:2]
-            result.append({"image": rotated_img, "rotation": rotation, "width": width, "height": height})
-        return result
+            if rotation != 0: 
+                page_2_update = next((page for page in pages if page.page_num == page_num), None)
+                if page_2_update is not None:
+                    page_2_update.image = PILimage_to_NParray(img.rotate(rotation, expand=True))
+                    page_2_update.rotation = rotation
+                else:
+                    raise ValueError("Missing page(s)")
+            else: continue
 
-    def get_rotated_info_only(self):
-        return self._pages
-
-def show_window(images): #image: numpy array
+def show_window(pages): #image: numpy array
     root = tkinter.Tk()
     root.withdraw()
-    PIL_image = []
-    for image in images:
-        PIL_image.append(NParray_to_PILimage(image))
-    app = rotate_image_window(root, "Adjust page orientation", PIL_image)
+    pages_4_rotate = []
+    for page in pages:
+        pages_4_rotate.append({"image": NParray_to_PILimage(page.image), "page_num":page.page_num})
+    app = rotate_image_window(root, "Adjust page orientation", pages_4_rotate)
     root.mainloop()
-    rotated = app.get_rotated()
-    return [pdf_page(
-                     image=PILimage_to_NParray(rotated_page["image"]), 
-                     rotation=rotated_page["rotation"], 
-                     width=rotated_page["width"], 
-                     height=rotated_page["Height"]
-                    ) for rotated_page in rotated]
+    app.get_rotated(pages)
+    
 
 def revert_rotation_points(points, angle, orig_shape):
     if angle == 0:
@@ -189,3 +185,16 @@ def revert_rotation_points(points, angle, orig_shape):
         return [(y, h - 1 - x) for x, y in points]
     else:
         return points
+
+if __name__ == "__main__":
+    from PIL import ImageDraw
+    test_images = []
+    for i in range(3):
+        img = Image.new('RGB', (300, 200), color=(100 + i*50, 150, 200))
+        draw = ImageDraw.Draw(img)
+        draw.text((50, 80), f"Page {i+1}", fill='black')
+        test_images.append(numpy.array(img))
+        
+    result = show_window(test_images)
+    print("over")
+    print([page for page in result])

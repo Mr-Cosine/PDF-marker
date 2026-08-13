@@ -99,9 +99,6 @@ if __name__ == "__main__":
 
         merged_pdf.close()
 
-        raise SystemExit() # end the program with success
-    
-    except SystemExit:
         IPC.resolve({
             "success": True,
             "message": "",
@@ -118,3 +115,4 @@ if __name__ == "__main__":
             "message": f"Error: {str(e)}",
             "details": [traceback.format_exc()]
             })
+        sys.exit(1)
