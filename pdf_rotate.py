@@ -42,12 +42,14 @@ class rotate_image_window:
         self.update_display()
 
     def rotate_left(self):
-        self._pages[self._active_page_num]["rotation"] += 90
-        if self._pages[self._active_page_num]["rotation"] >= 360: self._pages[self._active_page_num]["rotation"] -= 360
+        active_page = next((page for page in self._pages if page.get("page_num") == self._active_page_num), None)
+        active_page["rotation"] += 90
+        if active_page["rotation"] >= 360: active_page["rotation"] -= 360
         self.update_display()
     def rotate_right(self):
-        self._pages[self._active_page_num]["rotation"] -= 90
-        if self._pages[self._active_page_num]["rotation"] < 0: self._pages[self._active_page_num]["rotation"] += 360
+        active_page = next((page for page in self._pages if page.get("page_num") == self._active_page_num), None)
+        active_page["rotation"] -= 90
+        if active_page["rotation"] < 0: active_page["rotation"] += 360
         self.update_display()
 
     def page_up(self):
@@ -166,7 +168,11 @@ def show_window(pages): #image: numpy array
     root.withdraw()
     pages_4_rotate = []
     for page in pages:
-        pages_4_rotate.append({"image": NParray_to_PILimage(page.image), "page_num":page.page_num})
+        pages_4_rotate.append({
+            "image": NParray_to_PILimage(page.image), 
+            "page_num":page.page_num, 
+            "rotation": 0
+            })
     app = rotate_image_window(root, "Adjust page orientation", pages_4_rotate)
     root.mainloop()
     app.get_rotated(pages)

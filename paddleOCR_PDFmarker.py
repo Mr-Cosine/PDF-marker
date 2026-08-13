@@ -7,7 +7,7 @@ import pymupdf
 import numpy
 from PIL import Image
 import IPC
-import paddleOCR_reader
+import paddleOCR_reader as reader
 from paddleocr import TextDetection, TextRecognition
 import pdf_rotate
 from page_elements import pdf_page
@@ -120,24 +120,22 @@ def markPDF(settings, pdf_file):
     # 对每一页进行处理
     IPC.report("Start reading...")
     for page_4_read in pages_4_read:
-        IPC.log("================================")
-
-        IPC.report(f"Processing page {page_4_read.page_num + 1}... [{page_4_read.page_num + 1}/{len(pages_4_read)}]")
+        IPC.report(f"Processing... progress: [{page_4_read.page_num + 1}/{len(pages_4_read)}] pages")
 
         page_file = page_4_read.page_file
         og_height = page_4_read.height
         og_width = page_4_read.width
 
         # 提取文本行，分组为段落
-        snippets_read = paddleOCR_reader.read(page_4_read.image, model_det, model_rec)
-        paragraphs = paddleOCR_reader.group_snippets_into_paragraphs(snippets_read, leniency=leniency)
+        snippets_read = reader.read(page_4_read.image, model_det, model_rec)
+        paragraphs = reader.group_snippets_into_paragraphs(snippets_read, leniency=leniency)
 
-        # 4. 坐标映射准备
-        # PDF 页面尺寸（旋转后视图）
-        page_rect = page_file.rect
-        scale_x = page_rect.width / og_width   # 像素 → 点 (宽度)
-        scale_y = page_rect.height / og_height  # 像素 → 点 (高度)
+        # 页面旋转&缩放矫正设置
+        scale_x = page_file.rect.width / og_width
+        scale_y = page_file.rect.height / og_height
 
+        # 检测关键字并标注
+        IPC.log("================================")
         for i, para in enumerate(paragraphs):
             # ---- 先判断整个段落是否匹配关键词 ----
             has_kw = match(para.text())

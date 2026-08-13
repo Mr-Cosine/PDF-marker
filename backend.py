@@ -115,4 +115,3 @@ if __name__ == "__main__":
             "message": f"Error: {str(e)}",
             "details": [traceback.format_exc()]
             })
-        sys.exit(1)

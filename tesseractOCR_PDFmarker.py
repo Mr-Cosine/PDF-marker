@@ -9,7 +9,7 @@ import pytesseract
 import numpy
 from PIL import Image
 import IPC
-import tesseractOCR_reader
+import tesseractOCR_reader as reader
 import pdf_rotate
 from page_elements import pdf_page
 from pdf_rotate import revert_rotation_points
@@ -32,15 +32,10 @@ def load_model():
         raise ImportError("Failed loading OCR model.")
 
 def process_one_page(upright_page, leniency):
-    snippets_read = tesseractOCR_reader.read(upright_page.image)
-    upright_page.content = tesseractOCR_reader.group_snippets_into_paragraphs(snippets_read, leniency=leniency)
+    snippets_read = reader.read(upright_page.image)
+    upright_page.content = reader.group_snippets_into_paragraphs(snippets_read, leniency=leniency)
 
 def markPDF(settings, pdf_file):
-    os.environ["OMP_THREAD_LIMIT"] = "2"
-    os.environ["OMP_NUM_THREADS"] = "2"
-
-    MAX_WORKERS = 3
-
     # 解析设置
     keyword = settings.get("keyword", None)
     capital = settings.get("capital", None)
@@ -48,6 +43,11 @@ def markPDF(settings, pdf_file):
     output_dir = settings.get("output_dir", None)
     output_name = settings.get("output_name", None)
     DPI = settings.get("dpi", 150)
+
+    # 多线程设置
+    os.environ["OMP_THREAD_LIMIT"] = "2"
+    os.environ["OMP_NUM_THREADS"] = "2"
+    MAX_WORKERS = 3
 
     if not all([capital is not None and isinstance(capital, bool), 
                 leniency is not None and leniency > 0,  
@@ -119,35 +119,34 @@ def markPDF(settings, pdf_file):
 
     # 对每一页进行处理
     with ThreadPoolExecutor(max_workers=3) as executor:
+        all_tasks = [executor.submit(process_one_page, page, leniency) for page in pages_4_read]
         task_done = 0
         IPC.report(f"Processing... progress: [{task_done}/{len(all_tasks)}] pages")
-        all_tasks = [executor.submit(process_one_page, page, leniency) for page in pages_4_read]
 
         for task in as_completed(all_tasks):
-            task_done += 1
-
-            try: task.result()
+            try: 
+                task.result() # check if any Exception occurs
+                task_done += 1 # If not, mark one more page as done
             except Exception as e: raise e
 
             IPC.report(f"Processing... progress: [{task_done}/{len(all_tasks)}] pages")
 
+    # 检测关键字并标注
+    IPC.log("================================")
     for page_4_read in pages_4_read:
+        # 页面旋转&缩放矫正设置
         page_file = page_4_read.page_file
         og_height = page_4_read.height
         og_width = page_4_read.width
-
-        page_rect = page_file.rect
-        scale_x = page_rect.width / og_width
-        scale_y = page_rect.height / og_height
+        scale_x = page_file.rect.width / og_width
+        scale_y = page_file.rect.height / og_height
     
         for i, para in enumerate(page_4_read.content):
-            # ---- 先判断整个段落是否匹配关键词 ----
             has_kw = match(para.text())
             IPC.log(f"paragraph{i}: has keyword is {has_kw}")
             IPC.log(f"{para.text()[:50]}" + ("..." if len(para.text()) > 50 else ""))
             if not has_kw: continue
 
-            # ---- 匹配时，画红色矩形框（段落边框） ----
             left_c, top_c, right_c, bottom_c = para.left_bound(), para.top_bound(), para.right_bound(), para.bottom_bound()
             corners_c = [(left_c, top_c), (right_c, top_c), (right_c, bottom_c), (left_c, bottom_c)]
             corners_orig = revert_rotation_points(corners_c, page_4_read.rotation, (og_height, og_width))
