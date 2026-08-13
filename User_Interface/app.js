@@ -13,7 +13,6 @@
     const markBtn = document.getElementById('markBtn');
     const statusText = document.getElementById('statusText');
     const statusBar = document.getElementById('statusBar');
-    const statusText = document.getElementById('statusText')
     
     let fileItems = [];
 
