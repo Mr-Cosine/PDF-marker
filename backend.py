@@ -9,29 +9,33 @@ def get_configs():
     
     settings = json.loads(raw)
 
-    model = settings.get("model", None)
     keyword = settings.get("keyword", None)
-    capital = settings.get("capital", None)
-    leniency = settings.get("leniency", None)
     output_dir = settings.get("outputDir", None)
     output_name = settings.get("outputName", None)
+    model = settings.get("model", None)
+    capital = settings.get("capital", None)
+    leniency = settings.get("leniency", None)
+    DPI = settings.get("DPI", None)
+
     files = settings.get("files", None)
 
-    if not all([model is not None,
-                capital is not None, 
-                leniency is not None and leniency > 0, 
-                files is not None and len(files) > 0, 
+    if not all([files is not None and len(files) > 0, 
                 output_dir is not None and len(output_dir) > 0, 
-                output_name is not None and len(output_name) > 0]):
-        raise ValueError("Invalid input settings.")
+                output_name is not None and len(output_name) > 0,
+                model is not None,
+                capital is not None and isinstance(capital, bool), 
+                DPI is not None and DPI > 0,
+                leniency is not None and leniency > 0, ]):
+        raise ValueError("Invalid input settings occurred.")
 
     return { 
-        "model": model,
         "keyword": keyword,
-        "capital": capital,
-        "leniency": leniency,
         "output_dir": output_dir,
         "output_name": output_name,
+        "model": model,
+        "capital": capital,
+        "DPI": DPI,
+        "leniency": leniency,
     }, files
 
 def mergePDF(files):
@@ -75,11 +79,9 @@ if __name__ == "__main__":
         import traceback
 
         # the resolution when render pdf in dpi
-        RENDER_RES = 150
 
         IPC.report("Loading configurations...")
         [settings, files] = get_configs()
-        settings.update({"dpi": RENDER_RES})
 
         model = settings.get("model", None)
         if isinstance(model, str): model = model.strip()

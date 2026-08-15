@@ -47,8 +47,8 @@ class read_snippet:
         self._right = numpy.max( self._pts[:, 0])
         self._bottom = numpy.max(self._pts[:, 1])
         self._top = numpy.min(self._pts[:, 1])
-        self._line_height = max(1.0, (( self._bottomright_point[1] + self._bottomleft_point[1] - 
-                                        self._topleft_point[1] - self._topright_point[1])) / 4.0)
+        self._line_height = max(1.0, ((self._bottomright_point[1] + self._bottomleft_point[1] - 
+                                       self._topleft_point[1] - self._topright_point[1])) / 4.0)
         
     def image(self):            return self._image
     def text(self):             return self._text

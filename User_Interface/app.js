@@ -10,12 +10,46 @@
     const leniencyInput = document.getElementById('leniencyInput')
     const capitalToggle = document.getElementById('capitalToggle')
     const modelSelect = document.getElementById('modelSelect')
+    const resInput = document.getElementById('resInput')
     const markBtn = document.getElementById('markBtn');
     const statusText = document.getElementById('statusText');
     const statusBar = document.getElementById('statusBar');
+    const expandSetting = document.getElementById('expandSetting')
     
     let fileItems = [];
 
+    // --- Expand or Collapse Settings
+    let expandedSettings = false
+    function updateExpandButton() {
+        const arrowDown = document.getElementById('arrow-down');
+        const arrowUp = document.getElementById('arrow-up');
+        const buttonText = document.getElementById('expand-setting-text');
+
+        if (!expandedSettings) {
+            arrowDown.classList.remove('hidden');
+            arrowUp.classList.add('hidden');
+            buttonText.textContent = "Show less";
+        }
+        else {
+            arrowDown.classList.add('hidden');
+            arrowUp.classList.remove('hidden');
+            buttonText.textContent = "Show more";
+        }
+    }
+
+    function expandOrCollapseSettings() {
+        const basic = document.getElementById('basic-setting')
+        const advanced = document.getElementById('advanced-setting')
+
+        if (!expandedSettings) advanced.classList.remove('hidden');
+        else advanced.classList.add('hidden');
+        expandedSettings = !expandedSettings;
+        updateExpandButton();
+    }
+    updateExpandButton();
+    expandSetting.addEventListener('click', expandOrCollapseSettings);
+    
+    // --- File display ---
     function renderFileList() {
         fileListEl.innerHTML = '';
 
@@ -55,7 +89,6 @@
             });
             actionBtns.appendChild(upBtn);
 
-            // 下移
             const downBtn = document.createElement('button');
             downBtn.setAttribute('class', 'action-button')
             downBtn.textContent = '▼';
@@ -88,6 +121,22 @@
         
         updateMarkButton();
     }
+
+    const resToggle = document.getElementById('resToggle');
+    const resInput = document.getElementById('resInput');
+
+    resToggle.addEventListener('input', function() {
+        resInput.value = this.value;
+    });
+
+    resInput.addEventListener('change', function() {
+        let val = parseInt(this.value, 10);
+        if (isNaN(val)) return;
+        if (val < parseInt(this.min, 10)) val = parseInt(this.min, 10);
+        if (val > parseInt(this.max, 10)) val = parseInt(this.max, 10);
+        resToggle.value = val;
+        this.value = val;
+    });
 
     selectOutputDir.addEventListener('click', async () => {
         const result = await window.electronAPI.openDirDialog();
@@ -131,13 +180,14 @@
         const outputDir = outputDirInput.value.trim();
         const outputName = outputNameInput.value.trim();
         const leniency = parseFloat(leniencyInput.value)
+        const DPI = parseInt(resInput.value);
 
         const files = fileItems.map((item, index) => ({
             index: index,
             path: item.path
         }));
 
-        const settings = { model, keyword, capital, files, leniency, outputDir, outputName };
+        const settings = { files, keyword, outputDir, outputName, capital, model, DPI, leniency };
 
         markBtn.disabled = true
         const ogMarkBtnText = markBtn.textContent

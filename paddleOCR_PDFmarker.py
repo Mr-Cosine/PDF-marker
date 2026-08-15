@@ -48,14 +48,15 @@ def markPDF(settings, pdf_file):
     leniency = settings.get("leniency", None)
     output_dir = settings.get("output_dir", None)
     output_name = settings.get("output_name", None)
-    DPI = settings.get("dpi", 150)
+    DPI = settings.get("dpi", None)
 
-    if not all([capital is not None and isinstance(capital, bool), 
-                leniency is not None and leniency > 0,  
-                output_dir is not None and len(output_dir) > 0, 
-                output_name is not None and len(output_name) > 0]):
-        raise ValueError("Invalid input parameters: capital, leniency, output directory, and output name are required.")
-
+    if not all([output_dir is not None and len(output_dir) > 0, 
+                output_name is not None and len(output_name) > 0,
+                capital is not None and isinstance(capital, bool), 
+                DPI is not None and DPI > 0,
+                leniency is not None and leniency > 0, ]):
+        raise ValueError("Invalid input settings occurred.")
+    
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, f"{output_name}.pdf")
 
