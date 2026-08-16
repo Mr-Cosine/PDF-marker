@@ -73,14 +73,16 @@ ipcMain.handle('mark-pdf', async (event, settings) => {
         let outputData = '';
         let logData = [
             '[SETTINGS]',
-            `   - Keyword: ${settings.keyword}`,
-            `   - Match Capital: ${settings.capital}`,
-            `   - Files: ${settings.files.map(f => f.path).join(', ')}`,
-            `   - Output directory: ${settings.outputDir}`,
-            `   - Output file name: ${settings.outputName}`,
+            `- Files: \n${settings.files.map(f => "    · " + f.path).join(',\n')}`,
+            `- Keyword: ${settings.keyword}`,
+            `- Output directory: ${settings.outputDir}`,
+            `- Output file name: ${settings.outputName}`,
+            `- Match Capital: ${settings.capital}`,
+            `- OCR model: ${settings.model}`,
+            `- Parsing leniency: ${settings.leniency}`,
+            `- Resolution of OCR (dpi): ${settings.DPI}`,
             '===================================',
-            '[EXECUTION LOG]'
-        ].join('\n');
+            '[EXECUTION LOG]\n'].join('\n');
 
         const outcome_listener = readline.createInterface({ input: marker.stdout, terminal: false });
         outcome_listener.on('line', (line) => {
@@ -109,7 +111,7 @@ ipcMain.handle('mark-pdf', async (event, settings) => {
         });
 
         return new Promise((resolve, reject) => {
-            marker.on('close', (code) => {
+            marker.on('close', async (code) => {
                 if (code !== 0) {
                     const errorMsg = `进程退出，代码 ${code}\n${logData}`;
                     dialog.showErrorBox('执行失败', errorMsg);
@@ -134,18 +136,20 @@ ipcMain.handle('mark-pdf', async (event, settings) => {
                     else {
                         logData += `错误发生: ${result.message}`
                         logData += '\n ⚠ 此之后后因为错误而运行中断 ⚠';
-                        dialog.showMessageBox({
-                            type: 'warning',
-                            title: 'DEBUG INFO',
-                            message: result.message,
-                            detail: result.details.join('\n'),
-                            buttons: ['OK'],
-                        });
-                        dialog.showMessageBox({
-                            type: 'info',
-                            title: '运行日志',
-                            message: logData
-                        });
+                        await Promise.all([
+                            dialog.showMessageBox({
+                                type: 'info',
+                                title: '运行日志',
+                                message: logData
+                            }),
+                            dialog.showMessageBox({
+                                type: 'warning',
+                                title: 'DEBUG INFO',
+                                message: result.message,
+                                detail: result.details.join('\n'),
+                                buttons: ['OK'],
+                            })
+                        ]);
                     }
                     resolve(result);
                 }

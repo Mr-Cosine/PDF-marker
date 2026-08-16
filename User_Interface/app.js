@@ -11,6 +11,7 @@
     const capitalToggle = document.getElementById('capitalToggle')
     const modelSelect = document.getElementById('modelSelect')
     const resInput = document.getElementById('resInput')
+    const resToggle = document.getElementById('resToggle');
     const markBtn = document.getElementById('markBtn');
     const statusText = document.getElementById('statusText');
     const statusBar = document.getElementById('statusBar');
@@ -122,9 +123,6 @@
         updateMarkButton();
     }
 
-    const resToggle = document.getElementById('resToggle');
-    const resInput = document.getElementById('resInput');
-
     resToggle.addEventListener('input', function() {
         resInput.value = this.value;
     });
@@ -201,10 +199,14 @@
             });
 
             await window.electronAPI.markPDF(settings); 
-        } 
+        }
+        catch (e) {
+            statusText.textContent = `Unexpected error occured during execution: ${e}`
+        }
         finally {
             markBtn.disabled = false;
             markBtn.textContent = ogMarkBtnText;
+            window.electronAPI.stopUpdateProgress?.()
             statusText.textContent = '';
             statusBar.classList.add('hidden');
         }

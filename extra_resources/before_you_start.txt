@@ -1,14 +1,15 @@
 1. install all python dependencies, run:
     pip install -r python_dependencies.txt
-2. install node.js latest version from official website to your computer
-3. check the node.js installation by 
+2. install node.js latest version from official website to your computer.
+3. check the node.js installation by:
     node -v
     npm -v
-4. create a folder called OCRmodels
+4. create a folder called OCRmodels.
 5. install:
     tesseractOCR
-    and move the modle folder to the folder OCRmodels
+    and move the modle folder to the folder OCRmodels.
 6. from paddleOCR, install:
     PP-OCRv6_small_rec_safetensors
     PP-OCRv6_medium_det_safetensors
-    and move the model folders to the folder OCRmodels
+    and move the model folders to the folder OCRmodels.
+7. execute package_reader.ps1 to get the reader core named PDFmarkerApp.

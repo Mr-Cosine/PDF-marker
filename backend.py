@@ -34,7 +34,7 @@ def get_configs():
         "output_name": output_name,
         "model": model,
         "capital": capital,
-        "DPI": DPI,
+        "dpi": DPI,
         "leniency": leniency,
     }, files
 
