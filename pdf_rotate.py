@@ -26,12 +26,7 @@ class rotate_image_window:
         self.window.geometry("540x720")
         self.window.resizable(False, False)
 
-        # hot keys
-        self.window.bind("<Left>", self.rotate_left)
-        self.window.bind("<Right>", self.rotate_right)
-        self.window.bind("<Up>", self.page_up)
-        self.window.bind("<Down>", self.page_dn)
-        self.window.bind("<Return>", self.page_dn)
+        # handle window close event
         self.window.protocol("WM_DELETE_WINDOW", self.quit_app)
         self.window.focus_set()
 
@@ -97,13 +92,13 @@ class rotate_image_window:
 
         self.canvas.create_text(
             10, 10, anchor=tkinter.NW,
-            text=f"第 {self._active_page_num + 1} / {len(self._pages)} 页",
+            text=f"Page {self._active_page_num + 1} / {len(self._pages)}",
             fill="red", font=("Arial", 10)
         )
 
     def create_widgets(self):
         # Main label – top, centered
-        lbl1 = tkinter.Label(self.window, text="调整 PDF 页面朝向", font=("Arial", 12))
+        lbl1 = tkinter.Label(self.window, text="Adjust PDF Page Orientation", font=("Arial", 12))
         lbl1.pack(pady=(10, 5))
 
         # Container for the two control groups – will be centered
@@ -112,26 +107,26 @@ class rotate_image_window:
 
         # Rotation controls
         rot_frame = tkinter.Frame(controls_container)
-        tkinter.Label(rot_frame, text="页面操作", font=("Arial", 10)).pack(pady=2)
+        tkinter.Label(rot_frame, text="Page Operations", font=("Arial", 10)).pack(pady=2)
         rot_btns = tkinter.Frame(rot_frame)
         rot_btns.pack()
-        tkinter.Button(rot_btns, text="←逆时针旋转", command=self.rotate_left).pack(side=tkinter.LEFT, padx=3)
-        tkinter.Button(rot_btns, text="→顺时针旋转", command=self.rotate_right).pack(side=tkinter.LEFT, padx=3)
+        tkinter.Button(rot_btns, text="← To Left", command=self.rotate_left).pack(side=tkinter.LEFT, padx=3)
+        tkinter.Button(rot_btns, text="→ To Right", command=self.rotate_right).pack(side=tkinter.LEFT, padx=3)
         rot_frame.pack(side=tkinter.LEFT, padx=10)   # side by side with page controls
 
         # Page navigation
         page_frame = tkinter.Frame(controls_container)
-        tkinter.Label(page_frame, text="选择页面", font=("Arial", 10)).pack(pady=2)
+        tkinter.Label(page_frame, text="Select Page", font=("Arial", 10)).pack(pady=2)
         page_btns = tkinter.Frame(page_frame)
         page_btns.pack()
-        tkinter.Button(page_btns, text="↑上一页", command=self.page_up).pack(side=tkinter.LEFT, padx=3)
-        tkinter.Button(page_btns, text="↓下一页", command=self.page_dn).pack(side=tkinter.LEFT, padx=3)
+        tkinter.Button(page_btns, text="↑Previous Page", command=self.page_up).pack(side=tkinter.LEFT, padx=3)
+        tkinter.Button(page_btns, text="↓Next Page", command=self.page_dn).pack(side=tkinter.LEFT, padx=3)
         page_frame.pack(side=tkinter.LEFT, padx=10)
 
         # Confirm button (below, centered)
         quit_frame = tkinter.Frame(self.window)
         quit_frame.pack(pady=10)
-        tkinter.Button(quit_frame, text="确认完成", command=self.quit_app).pack()
+        tkinter.Button(quit_frame, text="Complete", command=self.quit_app).pack()
 
         # Canvas (occupies remaining space)
         self.canvas = tkinter.Canvas(
@@ -185,16 +180,3 @@ def revert_rotation_points(points, angle, orig_shape):
         return [(y, h - 1 - x) for x, y in points]
     else:
         return points
-
-if __name__ == "__main__":
-    from PIL import ImageDraw
-    test_images = []
-    for i in range(3):
-        img = Image.new('RGB', (300, 200), color=(100 + i*50, 150, 200))
-        draw = ImageDraw.Draw(img)
-        draw.text((50, 80), f"Page {i+1}", fill='black')
-        test_images.append(numpy.array(img))
-        
-    result = show_window(test_images)
-    print("over")
-    print([page for page in result])
