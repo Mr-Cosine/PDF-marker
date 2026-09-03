@@ -42,7 +42,6 @@ def load_model():
 
 
 def markPDF(settings, pdf_file):
-    # 解析设置
     keyword = settings.get("keyword", None)
     capital = settings.get("capital", None)
     leniency = settings.get("leniency", None)
@@ -60,7 +59,7 @@ def markPDF(settings, pdf_file):
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, f"{output_name}.pdf")
 
-    # 如果没有关键词，直接保存 PDF
+    # if no keyword provided, skip reading and marking (used for merging pdf only)
     if not keyword:
         pdf_file.save(output_path)
         return
@@ -91,12 +90,12 @@ def markPDF(settings, pdf_file):
     IPC.log("Loading OCR models...")
     IPC.report("Loading OCR models... (The first time is slower to initialize the model)")
     
-    # 初始化 OCR 模型（只加载一次）
+    # Load OCR model
     load_model()
     IPC.log("loaded OCR model successfully, start processing")
     IPC.report("Loaded OCR model successfully, start processing.")
 
-    # 准备pdf每一页，变成图像
+    # turn every page of pdf into image and store informations in pdf_page objects
     pages_4_read = []
     IPC.report("Check the pop up window for pdf preview, and fix any pages not oriented upright.")
     for page_num in range(len(pdf_file)):
@@ -118,7 +117,7 @@ def markPDF(settings, pdf_file):
 
     pdf_rotate.show_window(pages_4_read)
 
-    # 对每一页进行处理
+    # read every page
     IPC.report("Start reading...")
     for page_4_read in pages_4_read:
         IPC.report(f"Processing... progress: [{page_4_read.page_num + 1}/{len(pages_4_read)}] pages")
@@ -127,24 +126,22 @@ def markPDF(settings, pdf_file):
         og_height = page_4_read.height
         og_width = page_4_read.width
 
-        # 提取文本行，分组为段落
+        # formulate into paragraphs
         snippets_read = reader.read(page_4_read.image, model_det, model_rec)
         paragraphs = reader.group_snippets_into_paragraphs(snippets_read, leniency=leniency)
 
-        # 页面旋转&缩放矫正设置
+        # set scale factor for coordinate conversion
         scale_x = page_file.rect.width / og_width
         scale_y = page_file.rect.height / og_height
 
-        # 检测关键字并标注
+        # detect keywords in pargraph
         IPC.log("================================")
         for i, para in enumerate(paragraphs):
-            # ---- 先判断整个段落是否匹配关键词 ----
             has_kw = match(para.text())
             IPC.log(f"paragraph{i}: has keyword is {has_kw}")
             IPC.log(f"{para.text()[:50]}" + ("..." if len(para.text()) > 50 else ""))
             if not has_kw: continue
 
-            # ---- 匹配时，画红色矩形框（段落边框） ----
             left_c, top_c, right_c, bottom_c = para.left_bound(), para.top_bound(), para.right_bound(), para.bottom_bound()
             corners_c = [(left_c, top_c), (right_c, top_c), (right_c, bottom_c), (left_c, bottom_c)]
             corners_orig = revert_rotation_points(corners_c, page_4_read.rotation, (og_height, og_width))
@@ -163,5 +160,4 @@ def markPDF(settings, pdf_file):
             annot.set_border(width=1.5)
             annot.update()
 
-    # 保存修改后的 PDF
     pdf_file.save(output_path)

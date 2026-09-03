@@ -36,7 +36,6 @@ def process_one_page(upright_page, leniency):
     upright_page.content = reader.group_snippets_into_paragraphs(snippets_read, leniency=leniency)
 
 def markPDF(settings, pdf_file):
-    # 解析设置
     keyword = settings.get("keyword", None)
     capital = settings.get("capital", None)
     leniency = settings.get("leniency", None)
@@ -44,7 +43,7 @@ def markPDF(settings, pdf_file):
     output_name = settings.get("output_name", None)
     DPI = settings.get("dpi", None)
 
-    # 多线程设置
+    # multi-threading settings
     MAX_SYS_THREAD = 8
     MAX_WORKERS = 4
     os.environ["OMP_THREAD_LIMIT"] = f"{int((MAX_SYS_THREAD-2) / MAX_WORKERS)}"
@@ -60,7 +59,7 @@ def markPDF(settings, pdf_file):
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, f"{output_name}.pdf")
 
-    # 如果没有关键词，直接保存 PDF
+    # if no keyword provided, skip reading and marking (used for merging pdf only)
     if not keyword:
         pdf_file.save(output_path)
         return
@@ -91,12 +90,12 @@ def markPDF(settings, pdf_file):
     IPC.log("Loading OCR models...")
     IPC.report("Loading OCR models... (The first time is slower to initialize the model)")
     
-    # 初始化 OCR 模型（只加载一次）
+    # Load OCR model
     load_model()
     IPC.log("Loaded OCR model successfully, start processing")
     IPC.report("Loaded OCR model successfully, start processing.")
 
-    # 准备pdf每一页，变成图像
+    # turn every page of pdf into image and store informations in pdf_page objects
     pages_4_read = []
     IPC.report("Check the pop up window for pdf preview, and fix any pages not oriented upright.")
     for page_num in range(len(pdf_file)):
@@ -116,10 +115,9 @@ def markPDF(settings, pdf_file):
                                     width=page_image.shape[1]
                                     ))
 
-    # 摆正图像
     pdf_rotate.show_window(pages_4_read)
 
-    # 对每一页进行处理
+    # read every page
     with ThreadPoolExecutor(max_workers=3) as executor:
         all_tasks = [executor.submit(process_one_page, page, leniency) for page in pages_4_read]
         task_done = 0
@@ -133,10 +131,9 @@ def markPDF(settings, pdf_file):
 
             IPC.report(f"Processing... progress: [{task_done}/{len(all_tasks)}] pages")
 
-    # 检测关键字并标注
+    # marking the pdf
     IPC.log("================================")
     for page_4_read in pages_4_read:
-        # 页面旋转&缩放矫正设置
         page_file = page_4_read.page_file
         og_height = page_4_read.height
         og_width = page_4_read.width
@@ -167,5 +164,4 @@ def markPDF(settings, pdf_file):
             annot.set_border(width=1.5)
             annot.update()
 
-    # 保存修改后的 PDF
     pdf_file.save(output_path)

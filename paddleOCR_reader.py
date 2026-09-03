@@ -5,16 +5,6 @@ OCR core logics
 from page_elements import read_snippet, read_paragraph
 
 def read(image, model_det, model_rec):
-    """
-    output to excel sheet
-
-    :param image:           numpy.array                the image
-
-    :return:                status, content     
-                            if success: status = "success", content = None
-                            if error:   status = "error",   content = "error message"
-    """
-
     output = model_det.predict(image)
 
     all_snippets = []
@@ -48,7 +38,6 @@ def group_snippets_into_paragraphs(snippets, leniency=1):
     def near_vertical(s1, s2):
         return dist_ver(s1, s2) < avg(s1.line_height(), s2.line_height()) * 2.8 * leniency
     def overlap_hor(s1, s2):
-        # 找出较窄的框（宽度较小）和较宽的框
         if (s1.right_bound() - s1.left_bound()) < (s2.right_bound() - s2.left_bound()):
             narrow_l, narrow_r = s1.left_bound(), s1.right_bound()
             wide_l, wide_r = s2.left_bound(), s2.right_bound()
@@ -56,7 +45,6 @@ def group_snippets_into_paragraphs(snippets, leniency=1):
             narrow_l, narrow_r = s2.left_bound(), s2.right_bound()
             wide_l, wide_r = s1.left_bound(), s1.right_bound()
         
-        # 计算重叠区间
         overlap_l = max(narrow_l, wide_l)
         overlap_r = min(narrow_r, wide_r)
         if overlap_r <= overlap_l: return False
@@ -85,7 +73,6 @@ def group_snippets_into_paragraphs(snippets, leniency=1):
         para = read_paragraph()
         para.append(current)
 
-        # 扩展段落，直到没有更多 snippet 可以加入
         added = True
         while added:
             added = False

@@ -1,3 +1,6 @@
+"""
+Communication with the main.js for logging and message sending
+"""
 import sys
 import json
 

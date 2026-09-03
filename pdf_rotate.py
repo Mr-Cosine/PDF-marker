@@ -5,7 +5,6 @@ interactive pdf rotation
 import tkinter
 from PIL import ImageTk, Image
 import numpy
-from page_elements import pdf_page
 
 def NParray_to_PILimage(numpy_array):
     return Image.fromarray(numpy_array)
@@ -21,24 +20,26 @@ class rotate_image_window:
         self._pages = pages #PIL image object + orientation + page number
         self._active_page_num = 0
 
-        # 创建顶层窗口
+        # create window
         self.window = tkinter.Toplevel(master)
         self.window.title(title)
         self.window.geometry("540x720")
         self.window.resizable(False, False)
 
-        # 绑定键盘快捷键
+        # hot keys
         self.window.bind("<Left>", self.rotate_left)
         self.window.bind("<Right>", self.rotate_right)
         self.window.bind("<Up>", self.page_up)
         self.window.bind("<Down>", self.page_dn)
         self.window.bind("<Return>", self.page_dn)
         self.window.protocol("WM_DELETE_WINDOW", self.quit_app)
-        self.window.focus_set()  # 确保窗口捕获键盘事件
+        self.window.focus_set()
 
-        # 创建界面组件
+        # create widgets
         self.create_widgets()
         self.window.update()
+
+        # show initial page
         self.update_display()
 
     def rotate_left(self):
@@ -64,43 +65,36 @@ class rotate_image_window:
         self.window.master.quit() 
 
     def update_display(self):
-        # 获取当前页数据和旋转角度
         active_page = next((page for page in self._pages if page.get("page_num") == self._active_page_num), None)
         if active_page is None: raise ValueError("Missing page(s)")
         img = active_page["image"]
         angle = active_page["rotation"]
 
-        # 旋转图像（使用 PIL）
         rotated = img.rotate(angle, expand=True)
 
-        # 获取 Canvas 当前尺寸
         canvas_width = self.canvas.winfo_width()
         canvas_height = self.canvas.winfo_height()
-        # 若 Canvas 尚未布局，使用默认窗口尺寸
+
         if canvas_width <= 1 or canvas_height <= 1:
             canvas_width = 360
             canvas_height = 360
 
-        # 计算缩放比例，使图像完全放入 Canvas 并保持比例
         img_width, img_height = rotated.size
         ratio = min(canvas_width / img_width, canvas_height / img_height)
         new_width = int(img_width * ratio)
         new_height = int(img_height * ratio)
 
-        # 缩放图像
         resized = rotated.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
-        # 转换为 tkinter PhotoImage
         self.tk_img = ImageTk.PhotoImage(resized)
 
-        # 清空 Canvas 并绘制图像（居中）
         self.canvas.delete("all")
         self.canvas.create_image(
             canvas_width // 2, canvas_height // 2,
             anchor=tkinter.CENTER,
             image=self.tk_img
         )
-        # 可选：在角上显示页码
+
         self.canvas.create_text(
             10, 10, anchor=tkinter.NW,
             text=f"第 {self._active_page_num + 1} / {len(self._pages)} 页",
@@ -116,7 +110,7 @@ class rotate_image_window:
         controls_container = tkinter.Frame(self.window)
         controls_container.pack(pady=5)
 
-        # ---- Rotation controls ----
+        # Rotation controls
         rot_frame = tkinter.Frame(controls_container)
         tkinter.Label(rot_frame, text="页面操作", font=("Arial", 10)).pack(pady=2)
         rot_btns = tkinter.Frame(rot_frame)
@@ -125,7 +119,7 @@ class rotate_image_window:
         tkinter.Button(rot_btns, text="→顺时针旋转", command=self.rotate_right).pack(side=tkinter.LEFT, padx=3)
         rot_frame.pack(side=tkinter.LEFT, padx=10)   # side by side with page controls
 
-        # ---- Page navigation ----
+        # Page navigation
         page_frame = tkinter.Frame(controls_container)
         tkinter.Label(page_frame, text="选择页面", font=("Arial", 10)).pack(pady=2)
         page_btns = tkinter.Frame(page_frame)
@@ -134,7 +128,7 @@ class rotate_image_window:
         tkinter.Button(page_btns, text="↓下一页", command=self.page_dn).pack(side=tkinter.LEFT, padx=3)
         page_frame.pack(side=tkinter.LEFT, padx=10)
 
-        # ---- Confirm button (below, centered) ----
+        # Confirm button (below, centered)
         quit_frame = tkinter.Frame(self.window)
         quit_frame.pack(pady=10)
         tkinter.Button(quit_frame, text="确认完成", command=self.quit_app).pack()
@@ -163,13 +157,13 @@ class rotate_image_window:
                     raise ValueError("Missing page(s)")
             else: continue
 
-def show_window(pages): #image: numpy array
+def show_window(pages): #pdf_page object
     root = tkinter.Tk()
     root.withdraw()
     pages_4_rotate = []
     for page in pages:
         pages_4_rotate.append({
-            "image": NParray_to_PILimage(page.image), 
+            "image": NParray_to_PILimage(page.image), # Image is a numpy array
             "page_num":page.page_num, 
             "rotation": 0
             })

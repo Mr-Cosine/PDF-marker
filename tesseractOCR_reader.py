@@ -6,15 +6,6 @@ import pytesseract
 from page_elements import read_snippet, read_paragraph
 
 def read(image, lang="eng+chi_sim", psm=3):
-    """
-    使用 Tesseract 进行文本检测和识别。
-    返回: read_snippet 列表，每个 snippet 代表一个文本行。
-    参数：
-        image : numpy.ndarray   (RGB 图像，已被校正方向)
-        lang  : str             语言代码，默认 "eng"
-        psm   : int             Page Segmentation Mode，默认 6 (统一文本块)
-    """
-    # 获取详细的识别结果（包含单词位置）
     data = pytesseract.image_to_data(
         image,
         output_type=pytesseract.Output.DICT,
@@ -22,7 +13,6 @@ def read(image, lang="eng+chi_sim", psm=3):
         config=f"--psm {psm}"
     )
 
-    # 按 (block_num, par_num, line_num) 将单词聚合成文本行
     lines = {}
     n_boxes = len(data["level"])
     for i in range(n_boxes):
@@ -55,7 +45,6 @@ def read(image, lang="eng+chi_sim", psm=3):
         if r <= l or b <= t:
             continue
 
-        # 创建四边形角点（这里是水平矩形）
         p1 = (l, t)
         p2 = (r, t)
         p3 = (r, b)
@@ -81,7 +70,6 @@ def group_snippets_into_paragraphs(snippets, leniency=1):
     def near_vertical(s1, s2):
         return dist_ver(s1, s2) < avg(s1.line_height(), s2.line_height()) * 2.8 * leniency
     def overlap_hor(s1, s2):
-        # 找出较窄的框（宽度较小）和较宽的框
         if (s1.right_bound() - s1.left_bound()) < (s2.right_bound() - s2.left_bound()):
             narrow_l, narrow_r = s1.left_bound(), s1.right_bound()
             wide_l, wide_r = s2.left_bound(), s2.right_bound()
@@ -89,7 +77,6 @@ def group_snippets_into_paragraphs(snippets, leniency=1):
             narrow_l, narrow_r = s2.left_bound(), s2.right_bound()
             wide_l, wide_r = s1.left_bound(), s1.right_bound()
         
-        # 计算重叠区间
         overlap_l = max(narrow_l, wide_l)
         overlap_r = min(narrow_r, wide_r)
         if overlap_r <= overlap_l: return False
@@ -118,7 +105,6 @@ def group_snippets_into_paragraphs(snippets, leniency=1):
         para = read_paragraph()
         para.append(current)
 
-        # 扩展段落，直到没有更多 snippet 可以加入
         added = True
         while added:
             added = False
