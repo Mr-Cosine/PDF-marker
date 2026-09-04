@@ -5,7 +5,6 @@
     const outputNameInput = document.getElementById('outputNameInput')
     const fileInput = document.getElementById('fileInput');
     const fileListEl = document.getElementById('fileList');
-    const fileCountEl = document.getElementById('fileCount');
     const keywordInput = document.getElementById('keywordInput');
     const leniencyInput = document.getElementById('leniencyInput')
     const capitalToggle = document.getElementById('capitalToggle')
