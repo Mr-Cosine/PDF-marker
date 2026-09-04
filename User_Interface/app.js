@@ -28,12 +28,12 @@
         if (!expandedSettings) {
             arrowDown.classList.remove('hidden');
             arrowUp.classList.add('hidden');
-            buttonText.textContent = "Show less";
+            buttonText.textContent = "Show more";
         }
         else {
             arrowDown.classList.add('hidden');
             arrowUp.classList.remove('hidden');
-            buttonText.textContent = "Show more";
+            buttonText.textContent = "Show less";
         }
     }
 
@@ -53,7 +53,7 @@
     function renderFileList() {
         fileListEl.innerHTML = '';
 
-        fileItems = fileItems.filter(item => !(item.refcode === undefined && item.refcode === null));
+        fileItems = fileItems.filter(item => !(item.refcode === undefined || item.refcode === null));
         if (fileItems.length === 0) {
             const empty = document.createElement('li');
             empty.className = 'empty-message';
@@ -158,7 +158,6 @@
     });
 
     function updateMarkButton() {
-        const model = modelSelect.value;
         const outputDir = outputDirInput.value.trim();
         const outputName = outputNameInput.value.trim();
         const leniency = parseFloat(leniencyInput.value);
