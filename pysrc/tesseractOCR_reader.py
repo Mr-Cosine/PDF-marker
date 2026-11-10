@@ -2,25 +2,57 @@
 OCR core logics
 """
 
-from page_elements import read_snippet, read_paragraph
+import pytesseract
+from .page_elements import read_snippet, read_paragraph
 
-def read(image, model_det, model_rec):
-    output = model_det.predict(image)
+def read(image, lang="eng+chi_sim", psm=3):
+    data = pytesseract.image_to_data(
+        image,
+        output_type=pytesseract.Output.DICT,
+        lang=lang,
+        config=f"--psm {psm}"
+    )
 
+    lines = {}
+    n_boxes = len(data["level"])
+    for i in range(n_boxes):
+        text = data["text"][i].strip()
+        if not text:
+            continue
+        line_key = (data["block_num"][i], data["par_num"][i], data["line_num"][i])
+        x, y, w, h = data["left"][i], data["top"][i], data["width"][i], data["height"][i]
+
+        if line_key not in lines:
+            lines[line_key] = {
+                "texts": [text],
+                "left": x, "top": y,
+                "right": x + w, "bottom": y + h
+            }
+        else:
+            lines[line_key]["texts"].append(text)
+            lines[line_key]["left"]   = min(lines[line_key]["left"], x)
+            lines[line_key]["top"]    = min(lines[line_key]["top"], y)
+            lines[line_key]["right"]  = max(lines[line_key]["right"], x + w)
+            lines[line_key]["bottom"] = max(lines[line_key]["bottom"], y + h)
+
+    # 为每一行构建 read_snippet 对象
     all_snippets = []
-    for res in output:
-        dt_polys = res["dt_polys"]
-        for _, poly in enumerate(dt_polys):
-            new_snippet = read_snippet(poly[0], poly[1], poly[2], poly[3])
-            if (new_snippet._top < new_snippet._bottom and 
-                new_snippet._left < new_snippet._right):
-                cropped = image[int(new_snippet._top):int(new_snippet._bottom),
-                                int(new_snippet._left):int(new_snippet._right)]
-                new_snippet.set_image(cropped)
-                all_snippets.append(new_snippet)
+    for line_key, line_data in lines.items():
+        l = line_data["left"]
+        t = line_data["top"]
+        r = line_data["right"]
+        b = line_data["bottom"]
+        if r <= l or b <= t:
+            continue
 
-    for snippet in all_snippets:
-        snippet.set_text(model_rec.predict(snippet.image())[0].get("rec_text", "") or "")
+        p1 = (l, t)
+        p2 = (r, t)
+        p3 = (r, b)
+        p4 = (l, b)
+        snippet = read_snippet(p1, p2, p3, p4)
+        snippet.set_text(" ".join(line_data["texts"]))
+        snippet.set_image(None)
+        all_snippets.append(snippet)
 
     return all_snippets
 

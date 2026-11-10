@@ -21,12 +21,12 @@ pyinstaller --onedir --name=PDFmarkerExecutable `
             --hidden-import cv2 `
             --hidden-import pytesseract `
             --hidden-import PIL `
-            --hidden-import paddleOCR_reader `
-            --hidden-import tesseractOCR_reader `
-            --hidden-import paddleOCR_PDFmarker `
-            --hidden-import tesseractOCR_PDFmarker `
-            --hidden-import page_elements `
-            --hidden-import pdf_rotate `
+            --hidden-import pysrc.paddleOCR_reader `
+            --hidden-import pysrc.tesseractOCR_reader `
+            --hidden-import pysrc.paddleOCR_PDFmarker `
+            --hidden-import pysrc.tesseractOCR_PDFmarker `
+            --hidden-import pysrc.page_elements `
+            --hidden-import pysrc.pdf_rotate `
             --hidden-import IPC `
             --add-data "D:\Coding_projects\Work automations\NV request marker\OCRmodels\TesseractOCR;OCRmodels\TesseractOCR" `
             --add-data "D:\Coding_projects\Work automations\NV request marker\OCRmodels\PP-OCRv6_small_rec_safetensors;OCRmodels\PP-OCRv6_small_rec_safetensors" `

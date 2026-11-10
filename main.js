@@ -58,7 +58,7 @@ ipcMain.handle('mark-pdf', async (event, settings) => {
     const exePath = getExePath();
 
     if (!fs.existsSync(exePath)) {
-        const msg = `可执行文件不存在: ${exePath}`;
+        const msg = `.exe file don't exist at: ${exePath}`;
         dialog.showErrorBox('文件缺失', msg);
         throw new Error(msg);
     }
@@ -113,33 +113,31 @@ ipcMain.handle('mark-pdf', async (event, settings) => {
         return new Promise((resolve, reject) => {
             marker.on('close', async (code) => {
                 if (code !== 0) {
-                    const errorMsg = `进程退出，代码 ${code}\n${logData}`;
-                    dialog.showErrorBox('执行失败', errorMsg);
+                    const errorMsg = `Process quit, code: ${code}\n${logData}`;
+                    dialog.showErrorBox('Execution failed', errorMsg);
                     reject(new Error(errorMsg));
-                } 
-                else {
+                } else {
                     let result = null
-                    try {result = JSON.parse(outputData);} 
-                    catch (e) {
-                        const error = `JSON 解析失败, 原字符串: ${outputData}`;
-                        dialog.showErrorBox('解析错误', error);
+                    try {result = JSON.parse(outputData);
+                    } catch (e) {
+                        const error = `JSON parsing failed, original string: ${outputData}`;
+                        dialog.showErrorBox('Parsing error', error);
                         reject(new Error(error));
                     }
                     if (result.success === true) {
-                        logData += '\n ☑ 成功完成 ☑';
+                        logData += '\n ☑ Successful run ☑';
                         dialog.showMessageBox({
                             type: 'info',
-                            title: '运行日志',
+                            title: 'Execution log',
                             message: logData
                         });
-                    }
-                    else {
-                        logData += `错误发生: ${result.message}`
-                        logData += '\n ⚠ 此之后后因为错误而运行中断 ⚠';
+                    } else {
+                        logData += `Error: ${result.message}`
+                        logData += '\n ⚠ Break after error happens ⚠';
                         await Promise.all([
                             dialog.showMessageBox({
                                 type: 'info',
-                                title: '运行日志',
+                                title: 'Execution log',
                                 message: logData
                             }),
                             dialog.showMessageBox({
@@ -156,12 +154,12 @@ ipcMain.handle('mark-pdf', async (event, settings) => {
             });
 
             marker.on('error', (err) => {
-                dialog.showErrorBox('启动失败', err.message);
+                dialog.showErrorBox('Execution failed', err.message);
                 reject(err);
             });
         });
     } catch (e) {
-        dialog.showErrorBox('意外错误', e.message);
+        dialog.showErrorBox('Unexpected error', e.message);
         throw e;
     }
 });

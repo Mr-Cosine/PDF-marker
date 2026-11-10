@@ -1,6 +1,10 @@
 """
 Reader starter, communication with frontend
 """
+import json
+import os
+import sys
+import traceback
 import IPC
 
 def get_configs():
@@ -49,7 +53,7 @@ def mergePDF(files):
     merged_pdf = pymupdf.open()
 
     for pdf_num, pdf in enumerate(files):
-        IPC.report(f"Merging PDF, progress: [{pdf_num}/{len(pdf)}]")
+        IPC.report(f"Merging PDF, progress: [{pdf_num}/{len(files)}]")
 
         pdf_path = pdf.get("path")
         if not pdf_path:
@@ -72,11 +76,7 @@ def mergePDF(files):
 if __name__ == "__main__":
     merged_pdf = None
     try:
-        import json
-        import os
-        import sys 
         import pymupdf
-        import traceback
 
         # the resolution when render pdf in dpi
 
@@ -86,8 +86,8 @@ if __name__ == "__main__":
         model = settings.get("model", None)
         if isinstance(model, str): model = model.strip()
         
-        if model is not None and model == "tesseractOCR":   import tesseractOCR_PDFmarker as PDFmarker
-        elif model is not None and model == "paddleOCR":    import paddleOCR_PDFmarker as PDFmarker
+        if model is not None and model == "tesseractOCR":   import pysrc.tesseractOCR_PDFmarker as PDFmarker
+        elif model is not None and model == "paddleOCR":    import pysrc.paddleOCR_PDFmarker as PDFmarker
         else: raise ValueError(f"unknown model name: {model}")
         IPC.report("Configurations good.")
 

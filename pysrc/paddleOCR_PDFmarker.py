@@ -3,37 +3,45 @@ text recognition and annotation marking
 """
 
 import os
-from concurrent.futures import ThreadPoolExecutor, as_completed
+import sys
 import pymupdf
-import pytesseract
 import numpy
 from PIL import Image
 import IPC
-import tesseractOCR_reader as reader
-import pdf_rotate
-from page_elements import pdf_page
-from pdf_rotate import revert_rotation_points
+from . import paddleOCR_reader as reader
+from paddleocr import TextDetection, TextRecognition
+from . import pdf_rotate
+from .page_elements import pdf_page
+from .pdf_rotate import revert_rotation_points
 
-def get_model_path():
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(base_dir, "OCRmodels", "TesseractOCR", "tesseract.exe")
+model_det = None
+model_rec = None
+
+def get_model_path(name):
+    # packaged: PyInstaller's _internal dir; source: project root (parent of pysrc/)
+    base_dir = getattr(sys, "_MEIPASS", os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    path = os.path.join(base_dir, "OCRmodels", name)
 
     if os.path.exists(path): return path
-    else: raise FileNotFoundError(f"tesseract.exe not found at:{path}")
+    else: raise FileNotFoundError(f"PaddleOCR model not found at:{path}")
 
 def load_model():
-    tesseract_exe_path = get_model_path()
-    pytesseract.pytesseract.tesseract_cmd = tesseract_exe_path
-    tessdata_dir = os.path.join(os.path.dirname(tesseract_exe_path), "tessdata")
+    global model_det, model_rec
+    try:
+        model_det = TextDetection(
+            model_name="PP-OCRv6_medium_det",
+            model_dir=get_model_path("PP-OCRv6_medium_det_safetensors"),
+            engine="transformers"
+        )
+        model_rec = TextRecognition(
+            model_name="PP-OCRv6_small_rec",
+            model_dir=get_model_path("PP-OCRv6_small_rec_safetensors"),
+            engine="transformers"
+        )
+    except Exception:
+        raise ImportError("Failed loading OCR model")
 
-    if os.path.exists(tessdata_dir): 
-        os.environ["TESSDATA_PREFIX"] = tessdata_dir
-    else:
-        raise ImportError("Failed loading OCR model.")
 
-def process_one_page(upright_page, leniency):
-    snippets_read = reader.read(upright_page.image)
-    upright_page.content = reader.group_snippets_into_paragraphs(snippets_read, leniency=leniency)
 
 def markPDF(settings, pdf_file):
     keyword = settings.get("keyword", None)
@@ -43,19 +51,13 @@ def markPDF(settings, pdf_file):
     output_name = settings.get("output_name", None)
     DPI = settings.get("dpi", None)
 
-    # multi-threading settings
-    MAX_SYS_THREAD = 8
-    MAX_WORKERS = 4
-    os.environ["OMP_THREAD_LIMIT"] = f"{int((MAX_SYS_THREAD-2) / MAX_WORKERS)}"
-    os.environ["OMP_NUM_THREADS"] = f"{int((MAX_SYS_THREAD-2) / MAX_WORKERS)}"
-
     if not all([output_dir is not None and len(output_dir) > 0, 
                 output_name is not None and len(output_name) > 0,
                 capital is not None and isinstance(capital, bool), 
                 DPI is not None and DPI > 0,
                 leniency is not None and leniency > 0, ]):
         raise ValueError("Invalid input settings occurred.")
-
+    
     os.makedirs(output_dir, exist_ok=True)
     output_path = os.path.join(output_dir, f"{output_name}.pdf")
 
@@ -64,7 +66,7 @@ def markPDF(settings, pdf_file):
         pdf_file.save(output_path)
         return
 
-    IPC.log("Loading settings successful, start reading.")
+    IPC.log("Loading settings , start reading.")
 
     keywords = keyword.split()
 
@@ -86,13 +88,13 @@ def markPDF(settings, pdf_file):
             if not remaining: return True
         return False
 
-    IPC.log("Using tesseractOCR as OCR model")
+    IPC.log("Using paddleOCR as OCR model")
     IPC.log("Loading OCR models...")
     IPC.report("Loading OCR models... (The first time is slower to initialize the model)")
     
     # Load OCR model
     load_model()
-    IPC.log("Loaded OCR model successfully, start processing")
+    IPC.log("loaded OCR model successfully, start processing")
     IPC.report("Loaded OCR model successfully, start processing.")
 
     # turn every page of pdf into image and store informations in pdf_page objects
@@ -118,29 +120,25 @@ def markPDF(settings, pdf_file):
     pdf_rotate.show_window(pages_4_read)
 
     # read every page
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        all_tasks = [executor.submit(process_one_page, page, leniency) for page in pages_4_read]
-        task_done = 0
-        IPC.report(f"Processing... progress: [{task_done}/{len(all_tasks)}] pages")
-
-        for task in as_completed(all_tasks):
-            try: 
-                task.result() # check if any Exception occurs
-                task_done += 1 # If not, mark one more page as done
-            except Exception as e: raise e
-
-            IPC.report(f"Processing... progress: [{task_done}/{len(all_tasks)}] pages")
-
-    # marking the pdf
-    IPC.log("================================")
+    IPC.report("Start reading...")
     for page_4_read in pages_4_read:
+        IPC.report(f"Processing... progress: [{page_4_read.page_num + 1}/{len(pages_4_read)}] pages")
+
         page_file = page_4_read.page_file
         og_height = page_4_read.height
         og_width = page_4_read.width
+
+        # formulate into paragraphs
+        snippets_read = reader.read(page_4_read.image, model_det, model_rec)
+        paragraphs = reader.group_snippets_into_paragraphs(snippets_read, leniency=leniency)
+
+        # set scale factor for coordinate conversion
         scale_x = page_file.rect.width / og_width
         scale_y = page_file.rect.height / og_height
-    
-        for i, para in enumerate(page_4_read.content):
+
+        # detect keywords in pargraph
+        IPC.log("================================")
+        for i, para in enumerate(paragraphs):
             has_kw = match(para.text())
             IPC.log(f"paragraph{i}: has keyword is {has_kw}")
             IPC.log(f"{para.text()[:50]}" + ("..." if len(para.text()) > 50 else ""))
